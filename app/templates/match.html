@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Match Details</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <header>
+        <h1>Match Details</h1>
+        <nav>
+            <a href="/">Home</a>
+            <a href="/standings">Standings</a>
+        </nav>
+    </header>
+
+    <main>
+        <h2>{{ match.home_team }} {{ match.home_score }} - {{ match.away_score }} {{ match.away_team }}</h2>
+        <p>Status: {{ match.status }} | Minute: {{ match.minute }}</p>
+
+        <section>
+            <h3>Events</h3>
+            <ul>
+                {% for event in match.events %}
+                <li>{{ event.minute }}' - {{ event.team }} - {{ event.type }} - {{ event.player }}</li>
+                {% endfor %}
+            </ul>
+        </section>
+
+        <section>
+            <h3>Home Lineup</h3>
+            <ul>
+                {% for player in match.lineups.home %}
+                <li>{{ player }}</li>
+                {% endfor %}
+            </ul>
+        </section>
+
+        <section>
+            <h3>Away Lineup</h3>
+            <ul>
+                {% for player in match.lineups.away %}
+                <li>{{ player }}</li>
+                {% endfor %}
+            </ul>
+        </section>
+    </main>
+</body>
+</html>

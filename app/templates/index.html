@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ligat Ha'Al Live Scores</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <header>
+        <h1>Ligat Ha'Al Live Scores</h1>
+        <nav>
+            <a href="/">Home</a>
+            <a href="/standings">Standings</a>
+        </nav>
+    </header>
+
+    <main>
+        <h2>Live Matches</h2>
+        <div id="matches-container">
+            {% for match in matches %}
+            <div class="match-card">
+                <p><strong>{{ match.home_team }}</strong> {{ match.home_score }} - {{ match.away_score }} <strong>{{ match.away_team }}</strong></p>
+                <p>Status: {{ match.status }} | Minute: {{ match.minute }}</p>
+                <a href="/match/{{ match.id }}">View match details</a>
+            </div>
+            {% endfor %}
+        </div>
+    </main>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

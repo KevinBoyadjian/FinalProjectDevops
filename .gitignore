@@ -205,3 +205,17 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# Terraform
+terraform/.terraform/
+*.tfstate
+*.tfstate.backup
+terraform/terraform.tfstate*
+crash.log
+
+# Docker
+.dockerignore
+
+
+
+
