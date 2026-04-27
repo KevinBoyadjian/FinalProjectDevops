@@ -2,16 +2,31 @@ async function refreshLiveMatches() {
     const container = document.getElementById("matches-container");
     if (!container) return;
 
+    const league = container.dataset.league || "la-liga";
+
     try {
-        const response = await fetch("/api/live");
-        const matches = await response.json();
+        const response = await fetch(`/api/live?league=${league}`);
+
+        if (response.status === 429) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-icon">⏳</div>
+                    <h3>API limit reached</h3>
+                    <p>Too many requests. Please wait a little before refreshing again.</p>
+                </div>
+            `;
+            return;
+        }
+
+        const data = await response.json();
+        const matches = data.matches || [];
 
         if (!matches.length) {
             container.innerHTML = `
                 <div class="empty-state">
                     <div class="empty-icon">⚠</div>
-                    <h3>No live matches right now</h3>
-                    <p>Try refreshing or check again later.</p>
+                    <h3>No matches found right now</h3>
+                    <p>Try another league or refresh later.</p>
                 </div>
             `;
             return;
@@ -22,10 +37,11 @@ async function refreshLiveMatches() {
         matches.forEach(match => {
             const card = document.createElement("article");
             card.className = "match-card";
+
             card.innerHTML = `
                 <div class="match-status">
                     <span class="live-badge">${match.status}</span>
-                    <span class="minute">${match.minute}'</span>
+                    <span class="minute">${match.minute || 0}'</span>
                 </div>
 
                 <div class="teams">
@@ -39,21 +55,25 @@ async function refreshLiveMatches() {
                     </div>
                 </div>
 
+                <p class="match-league">${match.league}</p>
+
                 <div class="card-footer">
                     <a class="details-link" href="/match/${match.id}">Match details</a>
                 </div>
             `;
+
             container.appendChild(card);
         });
+
     } catch (error) {
         container.innerHTML = `
             <div class="empty-state">
                 <div class="empty-icon">✖</div>
                 <h3>Failed to load matches</h3>
-                <p>Please try again in a moment.</p>
+                <p>Please try again later.</p>
             </div>
         `;
-        console.error("Error refreshing live matches:", error);
+        console.error(error);
     }
 }
 
@@ -64,5 +84,5 @@ document.addEventListener("DOMContentLoaded", () => {
         refreshButton.addEventListener("click", refreshLiveMatches);
     }
 
-    setInterval(refreshLiveMatches, 60000);
+    setInterval(refreshLiveMatches, 30000);
 });
