@@ -3,30 +3,77 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ligat Ha'Al Live Scores</title>
+    <title>GoalScorePlus - Live Football Scores</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
-<body>
-    <header>
-        <h1>Ligat Ha'Al Live Scores</h1>
-        <nav>
-            <a href="/">Home</a>
-            <a href="/standings">Standings</a>
-        </nav>
-    </header>
-
-    <main>
-        <h2>Live Matches</h2>
-        <div id="matches-container">
-            {% for match in matches %}
-            <div class="match-card">
-                <p><strong>{{ match.home_team }}</strong> {{ match.home_score }} - {{ match.away_score }} <strong>{{ match.away_team }}</strong></p>
-                <p>Status: {{ match.status }} | Minute: {{ match.minute }}</p>
-                <a href="/match/{{ match.id }}">View match details</a>
+<body class="dark-body">
+    <div class="app-shell">
+        <header class="topbar">
+            <div class="brand">
+                <div class="brand-logo">⚽</div>
+                <div>
+                    <h1>GoalScorePlus</h1>
+                    <p>Live football scores</p>
+                </div>
             </div>
-            {% endfor %}
-        </div>
-    </main>
+
+            <div class="topbar-actions">
+                <button id="refresh-btn" class="refresh-btn">Refresh</button>
+            </div>
+        </header>
+
+        <nav class="league-tabs">
+            <button class="league-tab active">All</button>
+            <button class="league-tab">Ligat Ha'Al</button>
+            <button class="league-tab">Premier League</button>
+            <button class="league-tab">La Liga</button>
+            <button class="league-tab">Serie A</button>
+        </nav>
+
+        <main class="content">
+            <section class="hero-panel">
+                <div>
+                    <h2>Today's Live Matches</h2>
+                    <p>Real-time football scores, events and match details.</p>
+                </div>
+                <a href="/standings" class="standings-link">View standings</a>
+            </section>
+
+            <section id="matches-container" class="matches-grid">
+                {% if matches %}
+                    {% for match in matches %}
+                    <article class="match-card">
+                        <div class="match-status">
+                            <span class="live-badge">{{ match.status }}</span>
+                            <span class="minute">{{ match.minute }}'</span>
+                        </div>
+
+                        <div class="teams">
+                            <div class="team-row">
+                                <span class="team-name">{{ match.home_team }}</span>
+                                <span class="team-score">{{ match.home_score }}</span>
+                            </div>
+                            <div class="team-row">
+                                <span class="team-name">{{ match.away_team }}</span>
+                                <span class="team-score">{{ match.away_score }}</span>
+                            </div>
+                        </div>
+
+                        <div class="card-footer">
+                            <a href="/match/{{ match.id }}" class="details-link">Match details</a>
+                        </div>
+                    </article>
+                    {% endfor %}
+                {% else %}
+                    <div class="empty-state">
+                        <div class="empty-icon">⚠</div>
+                        <h3>No live matches right now</h3>
+                        <p>Try refreshing or check again later.</p>
+                    </div>
+                {% endif %}
+            </section>
+        </main>
+    </div>
 
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>

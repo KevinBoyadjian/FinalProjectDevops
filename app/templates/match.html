@@ -3,48 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Match Details</title>
+    <title>GoalScorePlus - Match Details</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
-<body>
-    <header>
-        <h1>Match Details</h1>
-        <nav>
-            <a href="/">Home</a>
-            <a href="/standings">Standings</a>
-        </nav>
-    </header>
+<body class="dark-body">
+    <div class="app-shell match-page">
+        <a href="/" class="back-link">← Back to live scores</a>
 
-    <main>
-        <h2>{{ match.home_team }} {{ match.home_score }} - {{ match.away_score }} {{ match.away_team }}</h2>
-        <p>Status: {{ match.status }} | Minute: {{ match.minute }}</p>
+        <div class="match-details-card">
+            <h1>{{ match.home_team }} {{ match.home_score }} - {{ match.away_score }} {{ match.away_team }}</h1>
+            <p>Status: {{ match.status }} | Minute: {{ match.minute }}</p>
+        </div>
 
-        <section>
-            <h3>Events</h3>
-            <ul>
+        <div class="events-card">
+            <h2>Events</h2>
+            <ul class="clean-list">
                 {% for event in match.events %}
                 <li>{{ event.minute }}' - {{ event.team }} - {{ event.type }} - {{ event.player }}</li>
                 {% endfor %}
             </ul>
-        </section>
+        </div>
 
-        <section>
-            <h3>Home Lineup</h3>
-            <ul>
-                {% for player in match.lineups.home %}
-                <li>{{ player }}</li>
-                {% endfor %}
-            </ul>
-        </section>
+        <div class="lineups-card">
+            <h2>Lineups</h2>
+            <div class="lineups-grid">
+                <div>
+                    <h3>Home</h3>
+                    <ul class="clean-list">
+                        {% for player in match.lineups.home %}
+                        <li>{{ player }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
 
-        <section>
-            <h3>Away Lineup</h3>
-            <ul>
-                {% for player in match.lineups.away %}
-                <li>{{ player }}</li>
-                {% endfor %}
-            </ul>
-        </section>
-    </main>
+                <div>
+                    <h3>Away</h3>
+                    <ul class="clean-list">
+                        {% for player in match.lineups.away %}
+                        <li>{{ player }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
