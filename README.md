@@ -1,4 +1,4 @@
 # FinalProjectDevops
-Live scores website for Israeli Premier League (Ligat Ha'Al) - DevOps Final Project
+Live scores website for European Soccer  (English Premier League, Liga Spain, Serie A Italy, French Ligue1) - DevOps Final Project
 ## Contributors
 - Ilya
