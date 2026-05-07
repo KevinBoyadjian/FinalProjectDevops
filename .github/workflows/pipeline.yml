@@ -23,8 +23,9 @@ jobs:
               run: pip install bandit
 
             - name: Run Bandit Scan
-            # This scans the 'app' folder for Python-specific security flaws
-              run: bandit -r app/
+  # We skip B104 because 0.0.0.0 is required for Docker containers to work.
+  # We do NOT skip B201 (debug mode) because that should ALWAYS be blocked.
+              run: bandit -r app/ -s B104
 
     # JOB 2: Build, Scan, and Push the Container
     build-and-push:
