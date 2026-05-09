@@ -1,0 +1,77 @@
+name: Deploy EKS Infrastructure
+
+# 1. Naming and Triggers
+on:
+    push:
+        branches: [ "main", "feature/terraform-eks-infra" ]
+        # This allows you to click a button in github to run it manually
+    workflow_dispatch:
+        inputs:
+            action:
+                description: 'terraform Action (plan or apply)'
+                required: true
+                default: 'plan'
+                type: choice
+                options:
+                    - plan
+                    - apply
+
+# 2. Security & Permissions - The OIDC Passwordless AWS login
+permissions:
+    id-token: write # This gives the GitHub runner permissions to generate the digital signature to hand to AWS.
+    contents: read  # Standard permission allowing the runner to download your repository code.
+
+# 3. The Job Definition
+jobs:
+    terraform-deploy:
+        runs-on: ubuntu-latest
+        steps:
+# 4. Code Checkout and AWS Login
+            - name: Checkout Code
+              uses: actions/checkout@v4 # Copies all Terraform files from GitHub onto the runner machine.
+
+            - name: Configure AWS Credentials
+              uses: aws-actions/configure-aws-credentials@v4 # AWS action that handles the OIDC handshake. Using GitHub Secrets. 
+              with:
+                role-to-assume: ${{ secrets.AWS_TERRAFORM_ROLE_ARN }}
+                aws-region: us-east-1 # Relative
+
+# 5. Setup and Initialize Terraform
+            - name: Setup Terraform
+              uses: hashicorp/setup-terraform@v3 # Dowloads and installs the Terraform CLI tool onto the runner machine.
+              with:
+                terraform_version: "1.6.6"
+
+            - name: Terraform Init # Changes into the 'terraform' folder and initializes the project. It downloads the required AWS and Kubernetes provider plugins.
+              run: |
+                cd terraform
+                terraform init      
+
+# 6. Validation and Planning (The Safety Checks)
+            - name: Terraform Validate # A quick syntax check in .tf files. Stops if any syntax issue found.
+              run: |
+                cd terraform
+                terraform validate
+
+            - name: Terraform Plan # Calculates exactly what AWS resources will be created/changed/deployed
+            # The 'if' condition Runs on code push, OR if you manually select 'plan'
+              if: github.event_name == 'push' || github.event.inputs.action == 'plan'
+              run: |
+                cd terraform
+                terraform plan
+# 7. The Build Command (The 'Apply' Gate)
+            - name: Terraform Apply # 'terraform apply' Command actually spends money and creates EKS cluster.
+            # The Strict 'if' condition - This is a major safeguard. This step will ONLY run if two things are true:
+                # 1. The workflow was triggered by a human clicking the manual button (workflow_dispatch).
+                # 2. The human specifically selected 'apply' from the dropdown menu.
+            # ONLY runs if you manually click "Run Workflow" and select "apply"
+              if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply'
+              run: |
+                cd terraform
+                terraform apply -auto-approve
+
+# Summary of the Flow:
+#    1. Login into AWS securely without passwords.
+#    2. Syntax check.
+#    3. Plan (what it want to build)
+#    4. Stop   
