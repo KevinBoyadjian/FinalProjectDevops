@@ -30,5 +30,5 @@ output "public_subnet_ids" {
 
 output "kubeconfig_command" {
     description = "Command to update your local kubeconfig"
-    value       = "aws eks update-kubeconfig --region ${var.aws_regio} -- name ${module.eks_cluster.cluster_name}"
+    value       = "aws eks update-kubeconfig --region ${var.aws_region} -- name ${module.eks_cluster.cluster_name}"
 }

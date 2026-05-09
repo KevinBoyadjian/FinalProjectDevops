@@ -32,5 +32,5 @@ provider "kubernetes" {
 
 # Data source for EKS cluster authentication
 data "aws_eks_cluster_auth" "main" {
-    name = module.eks.cluster_name
+    name = module.eks.cluster_name.cluster_name
 }
