@@ -25,8 +25,8 @@ provider "aws" {
 # as it needs to connect to the EKS cluster created by AWS provider.
 # We'll configure this later, using the EKS cluster's output.
 provider "kubernetes" {
-    host                    = module.eks.cluster_endpoint
-    cluster_ca_certificate  = base64decode(module.eks.cluster_certificate_authority_data)
+    host                    = module.eks_cluster.cluster_endpoint
+    cluster_ca_certificate  = base64decode(module.eks_cluster.cluster_certificate_authority_data)
     token                   = data.aws_eks_cluster_auth.main.token
 }
 
