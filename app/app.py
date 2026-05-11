@@ -67,4 +67,6 @@ def api_live():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    # We set debug=False for security
+    # We add '# nosec' to tell Bandit "I know what I'm doing with the 0.0.0.0 bind"
+    app.run(host="0.0.0.0", port=5000, debug=False)  # nosec
