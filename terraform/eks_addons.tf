@@ -35,17 +35,22 @@ resource "aws_iam_role" "lb_controller" {
   tags = var.common_tags
 }
 
+# 3. This creates a custom IAM Policy using the content of your JSON file
+resource "aws_iam_policy" "lb_controller_custom_policy" {
+  name        = "${var.project_name}-lb-controller-custom-policy"
+  description = "Custom IAM policy for AWS Load Balancer Controller"
+  policy      = file("${path.module}/iam_policy_alb.json")
 
-# 3. Attach the AWS-MANAGED POLICY to the IAM Role
-# This is the correct way to grant permissions to the ALB Controller.
-resource "aws_iam_role_policy_attachment" "lb_controller_attach" {
-  role       = aws_iam_role.lb_controller.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSLoadBalancerControllerPolicy"
+  tags = var.common_tags
 }
 
-# ---------------------------------------------------------------------------------------------------------------------
-# NEW ADDITION: TIME SLEEP RESOURCE TO HANDLE IAM PROPAGATION
-# ---------------------------------------------------------------------------------------------------------------------
+# 4. This attaches your custom policy to the IAM Role
+resource "aws_iam_role_policy_attachment" "lb_controller_attach" {
+  role       = aws_iam_role.lb_controller.name
+  policy_arn = aws_iam_policy.lb_controller_custom_policy.arn
+}
+
+# 5. TIME SLEEP RESOURCE TO HANDLE IAM PROPAGATION
 # Force Terraform to wait 60 seconds after the policy is attached
 # to ensure AWS IAM has fully propagated before Helm tries to use it.
 resource "time_sleep" "wait_for_iam" {
