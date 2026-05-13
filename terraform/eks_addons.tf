@@ -51,7 +51,7 @@ resource "aws_iam_role_policy_attachment" "lb_controller_attach" {
 resource "time_sleep" "wait_for_iam" {
   depends_on      = [aws_iam_role_policy_attachment.lb_controller_attach]
   create_duration = "60s"
-
+}
 
 # ---------------------------------------------------------------------------------------------------------------------
 # AWS LOAD BALANCER CONTROLLER - HELM INSTALLATION
