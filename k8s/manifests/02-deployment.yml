@@ -54,12 +54,22 @@ spec:
         
         # PROD: Environment Variables - Inject secrets from the 'football-app-secrets' Secret
         env:
-        - name: FOOTBALL_API_KEY # Environment variable name in your Flask app
+        - name: FOOTBALL_API_KEY
           valueFrom:
             secretKeyRef:
-              name: football-app-secrets # Name of the Kubernetes Secret to pull from
-              key: FOOTBALL_API_KEY      # Key within the Secret that holds the value
-        
+              name: football-app-secrets
+              key: FOOTBALL_API_KEY
+        - name: FOOTBALL_API_BASE_URL # Added this
+          valueFrom:
+            secretKeyRef:
+              name: football-app-secrets
+              key: FOOTBALL_API_BASE_URL
+        - name: SECRET_KEY # Added this
+          valueFrom:
+            secretKeyRef:
+              name: football-app-secrets
+              key: SECRET_KEY
+
         # PROD: Resource Requests & Limits - Crucial for stability and performance.
         # Requests: Minimum resources guaranteed for the container.
         # Limits: Maximum resources the container can consume.

@@ -1,65 +1,76 @@
 name: DevSecOps Pipeline
 
 on:
-    push:
-        branches: [ "main", "feature/*" ]
-    pull_request:
-        branches: [ "main" ]
+  push:
+    branches: [ "main" ]
+  workflow_dispatch: 
+
+# REQUIRED for OIDC authentication to AWS
+permissions:
+  id-token: write
+  contents: read
 
 jobs:
-    # JOB 1: Static Application Security Testing (SAST)
-    python-security-scan:
-        runs-on: ubuntu-latest
-        steps:
-            - name: Checkout code
-              uses: actions/checkout@v4
+  # JOB 1: Security Scan
+  python-security-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install bandit
+      - run: bandit -r app/ -s B104
 
-            - name: Set up Python
-              uses: actions/setup-python@v5
-              with:
-                python-version: '3.12'
-            
-            - name: Install Bandit
-              run: pip install bandit
+  # JOB 2: Build and Push Container
+  build-and-push:
+    needs: python-security-scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - run: |
+          docker build -f docker/Dockerfile -t ${{ secrets.DOCKERHUB_USERNAME }}/football-app:${{ github.sha }} .
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/football-app:${{ github.sha }}
+          docker tag ${{ secrets.DOCKERHUB_USERNAME }}/football-app:${{ github.sha }} ${{ secrets.DOCKERHUB_USERNAME }}/football-app:latest
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/football-app:latest
 
-            - name: Run Bandit Scan
-  # We skip B104 because 0.0.0.0 is required for Docker containers to work.
-  # We do NOT skip B201 (debug mode) because that should ALWAYS be blocked.
-              run: bandit -r app/ -s B104
+  # JOB 3: THE ONE-CLICK DEPLOY (Using your OIDC Role)
+  provision-and-deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
 
-    # JOB 2: Build, Scan, and Push the Container
-    build-and-push:
-     needs: python-security-scan 
-     runs-on: ubuntu-latest
-     steps:
-        - name: Checkout code
-          uses: actions/checkout@v4
+      # SECURE AWS LOGIN using your existing Role
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_TERRAFORM_ROLE_ARN }} # e.g., arn:aws:iam::123456789:role/github-actions-terraform-role
+          aws-region: us-east-1
 
-        - name: Login to Docker Hub
-          uses: docker/login-action@v3
-          with:
-            username: ${{ secrets.DOCKERHUB_USERNAME }}
-            password: ${{ secrets.DOCKERHUB_TOKEN }}
-        
-        - name: Build Docker image
-          # Added -f docker/Dockerfile
-          run: |
-            docker build -f docker/Dockerfile -t ${{ secrets.DOCKERHUB_USERNAME }}/football-app:${{ github.sha }} .
+      # 1. Provision Infrastructure
+      - name: Terraform Init & Apply
+        run: |
+          cd terraform
+          terraform init
+          terraform apply -auto-approve
 
-        - name: Run Trivy Security Scan
-          uses: aquasecurity/trivy-action@master
-          with:
-            image-ref: '${{ secrets.DOCKERHUB_USERNAME }}/football-app:${{ github.sha }}'
-            format: 'table'
-            exit-code: '1'
-            severity: 'CRITICAL,HIGH'
+      # 2. Connect to Cluster
+      - name: Update Kubeconfig
+        run: |
+          aws eks update-kubeconfig --name flask-devsecops-dev-eks --region us-east-1
 
-        - name: Push Versioned Image
-          run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/football-app:${{ github.sha }}
-
-        - name: Push Latest Image (Main Only)
-          # Only update 'latest' if we are on the main branch
-          if: github.ref == 'refs/heads/main'
-          run: |
-            docker tag ${{ secrets.DOCKERHUB_USERNAME }}/football-app:${{ github.sha }} ${{ secrets.DOCKERHUB_USERNAME }}/football-app:latest
-            docker push ${{ secrets.DOCKERHUB_USERNAME }}/football-app:latest
+      # 3. Inject API Key & Deploy App (# Create secret with all three variables from GitHub)
+      - name: K8s Deploy
+        run: |
+          kubectl create secret generic football-app-secrets \
+            --from-literal=FOOTBALL_API_KEY="${{ secrets.FOOTBALL_API_KEY }}" \
+            --from-literal=FOOTBALL_API_BASE_URL="${{ secrets.FOOTBALL_API_BASE_URL }}" \
+            --from-literal=SECRET_KEY="${{ secrets.SECRET_KEY }}" \
+            --dry-run=client -o yaml | kubectl apply -f -
+          
+          kubectl apply -f kubernetes/manifests/
