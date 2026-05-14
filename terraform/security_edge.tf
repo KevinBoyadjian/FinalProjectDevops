@@ -97,5 +97,3 @@ resource "aws_cloudfront_distribution" "main" {
 
   tags = var.common_tags
 }
-
-
