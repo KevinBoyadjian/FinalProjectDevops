@@ -2,7 +2,8 @@
 module "eks_cluster" {
     source  = "terraform-aws-modules/eks/aws"
     version = "~> 19.0" # Use a compatible version
-
+    kms_key_administrators = ["arn:aws:iam::219127327432:user/ilya"]
+    
     cluster_name    = "${var.project_name}-${var.environment}-eks"
     cluster_version = var.cluster_version
     vpc_id          = module.vpc.vpc_id
