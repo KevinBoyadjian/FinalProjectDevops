@@ -2,6 +2,10 @@
 module "eks_cluster" {
     source  = "terraform-aws-modules/eks/aws"
     version = "~> 20.0" # Use a compatible version
+
+# This gives the key a brand-new name to avoid the "AlreadyExists" conflict
+    kms_key_alias = "alias/eks/${var.project_name}-${var.environment}-eks-v2"
+
     kms_key_administrators = ["arn:aws:iam::219127327432:user/ilya"]
     
     cluster_name    = "${var.project_name}-${var.environment}-eks"
