@@ -59,10 +59,11 @@ jobs:
           aws-region: us-east-1
 
       # 1. Provision Infrastructure
-      - name: Terraform Init & Apply
+      - name: Terraform Init, Validate & Apply
         run: |
           cd terraform
           terraform init -upgrade
+          terraform validate
           terraform apply -auto-approve
 
       # 2. Connect to Cluster
