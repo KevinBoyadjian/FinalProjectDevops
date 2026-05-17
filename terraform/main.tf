@@ -15,26 +15,26 @@ module "eks_cluster" {
 
 
 # The Access fixes (github actions and aws user)
-    authentication_mode                         = "API_AND_CONFIG_MAP"
+    authentication_mode                        = "API_AND_CONFIG_MAP"
     enable_cluster_creator_admin_permissions   = true
 
 # ilya
     access_entries = {
       ilya_local = {
-        principal_arn     = "arn:aws:iam::219127327432:user/ilya"
+        principal_arn       = "arn:aws:iam::219127327432:user/ilya"
         policy_associations = {
             admin = {
-                policy_arn = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+                policy_arn   = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
                 access_scope = { type = "cluster" }
             }
         }
     }
 # kevinb
       kevinb_local = {
-        principal_arn     = "arn:aws:iam::219127327432:user/kevinb"
+        principal_arn       = "arn:aws:iam::219127327432:user/kevinb"
         policy_associations = {
             admin = {
-                policy_arn = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+                policy_arn   = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
                 access_scope = { type = "cluster" }
             }
         }      

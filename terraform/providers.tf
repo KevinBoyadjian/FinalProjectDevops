@@ -48,7 +48,7 @@ provider "helm" {
 
 terraform {
   backend "s3" {
-    bucket = "ilya-project-tf-state"
+    bucket = "ilyakevin-project-tf-state"
     key    = "state/terraform.tfstate"
     region = "us-east-1"
   }
