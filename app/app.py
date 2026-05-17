@@ -9,6 +9,13 @@ app.config.from_object(Config)
 
 football_service = FootballAPIService(app.config)
 
+@app.route('/health')
+def health_check():
+    """
+    Health check endpoint for Kubernetes Liveness and Readiness probes.
+    Returns a 200 OK status to indicate the container is running.
+    """
+    return "OK", 200
 
 @app.route("/")
 def index():
@@ -58,7 +65,7 @@ def api_live():
 
     if not matches:
         matches = football_service.get_upcoming_matches(league)
-        mode = "upcoming"
+        mode    = "upcoming"
 
     return jsonify({
         "mode": mode,
