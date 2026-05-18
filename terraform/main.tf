@@ -8,7 +8,7 @@ module "eks_cluster" {
     kms_key_aliases        = ["eks/${var.project_name}-${var.environment}-v2"]
     kms_key_administrators = ["arn:aws:iam::219127327432:user/ilya"]
     
-    cluster_name    = "${var.project_name}-${var.environment}-eks"
+    cluster_name    = "${var.project_name}-${var.environment}-eks-v2"
     cluster_version = var.cluster_version
     vpc_id          = module.vpc.vpc_id
     subnet_ids      = module.vpc.private_subnets # EKS control plane uses private subnets
