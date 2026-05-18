@@ -1,8 +1,8 @@
 name: DevSecOps Pipeline
 
 on:
-  push:
-    branches: [ "main" ]
+  # push:
+  #  branches: [ "main" ]
   workflow_dispatch: 
 
 # REQUIRED for OIDC authentication to AWS
@@ -69,7 +69,7 @@ jobs:
       # 2. Connect to Cluster
       - name: Update Kubeconfig
         run: |
-          aws eks update-kubeconfig --name flask-devsecops-dev-eks --region us-east-1
+          aws eks update-kubeconfig --name flask-devsecops-dev-eks-v2 --region us-east-1
 
       # 3. Inject API Key & Deploy App (# Create secret with all three variables from GitHub)
       - name: K8s Deploy

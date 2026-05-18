@@ -2,8 +2,8 @@ name: Deploy EKS Infrastructure
 
 # 1. Naming and Triggers
 on:
-    push:
-        branches: [ "main", "feature/terraform-eks-infra" ]
+    # push:
+    #    branches: [ "main", "feature/terraform-eks-infra" ]
         # This allows you to click a button in github to run it manually
     workflow_dispatch:
         inputs:
@@ -40,7 +40,7 @@ jobs:
             - name: Setup Terraform
               uses: hashicorp/setup-terraform@v3 # Dowloads and installs the Terraform CLI tool onto the runner machine.
               with:
-                terraform_version: "1.6.6"
+                terraform_version: "1.7.0"
 
             - name: Terraform Init # Changes into the 'terraform' folder and initializes the project. It downloads the required AWS and Kubernetes provider plugins.
               run: |
@@ -55,7 +55,7 @@ jobs:
 
             - name: Terraform Plan # Calculates exactly what AWS resources will be created/changed/deployed
             # The 'if' condition Runs on code push, OR if you manually select 'plan'
-              if: github.event_name == 'push' || github.event.inputs.action == 'plan'
+              if: github.event.inputs.action == 'plan' || github.event.inputs.action == 'apply'
               run: |
                 cd terraform
                 terraform plan
