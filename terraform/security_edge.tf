@@ -59,6 +59,12 @@ resource "aws_cloudfront_distribution" "main" {
     domain_name = "example.com" # Temporary name 
     origin_id   = "ALB-Origin"
 
+# THE SECRET HANDSHAKE
+    custom_header {
+      name  = "X-Custom-Header"
+      value = "${var.project_name}-Qa@vD6Yu8!@#31oP-DvdcDVAR-7"
+    }
+
     custom_origin_config {
       http_port              = 80
       https_port             = 443
@@ -81,8 +87,8 @@ resource "aws_cloudfront_distribution" "main" {
 
     viewer_protocol_policy = "redirect-to-https" # Force HTTPS for users
     min_ttl                = 0
-    default_ttl            = 3600
-    max_ttl                = 86400
+    default_ttl            = 0
+    max_ttl                = 0
   }
 
   restrictions {
