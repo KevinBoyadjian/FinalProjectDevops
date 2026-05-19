@@ -18,6 +18,7 @@ metadata:
     # which is more efficient and usually preferred.
     alb.ingress.kubernetes.io/target-type: ip
     
+    # To enable automated subnet discovery for the AWS Load Balancer Controller.
     alb.ingress.kubernetes.io/subnet-tags: kubernetes.io/role/elb=1
 
     # The secret handshake between CDN and Load Balancer (security_edge)
