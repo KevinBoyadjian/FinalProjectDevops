@@ -18,9 +18,11 @@ metadata:
     # which is more efficient and usually preferred.
     alb.ingress.kubernetes.io/target-type: ip
     
+    alb.ingress.kubernetes.io/subnet-tags: kubernetes.io/role/elb=1
+
     # The secret handshake between CDN and Load Balancer (security_edge)
     alb.ingress.kubernetes.io/conditions.football-app-service: >
-      [{"field":"http-header","httpHeaderConfig":{"httpHeaderName": "X-Custom-Header", "values":["${var.project_name}-Qa@vD6Yu8!@#31oP-DvdcDVAR-7"]}}]
+      [{"field":"http-header","httpHeaderConfig":{"httpHeaderName": "X-Custom-Header", "values":["flask-devsecops-Qa@vD6Yu8!@#31oP-DvdcDVAR-7"]}}]
 
 
     # Optional: Enable HTTP to HTTPS redirect and specify SSL certificate.
