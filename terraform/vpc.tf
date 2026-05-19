@@ -2,6 +2,17 @@ module "vpc" {
     source  = "terraform-aws-modules/vpc/aws"
     version = "~> 5.0"
 
+    # To ensure enable auto-discovery of the public subnets.
+    public_subnet_tags = {
+        "kubernetes.io/role/elb" = "1"
+    }
+
+    # This helps the EKS cluster identify the VPC subnets more reliably
+    private_subnet_tags = {
+        "kubernetes.io/role/internal-elb" = "1"
+    }
+}
+
     name = "${var.project_name}-vpc-${var.environment}"
     cidr = var.vpc_cidr
 

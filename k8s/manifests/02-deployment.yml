@@ -41,8 +41,6 @@ spec:
       
       # PROD: Security Context - Enforces running containers as a non-root user.
       # This aligns with the 'football_user' you created in your Dockerfile.
-      securityContext:
-        runAsNonRoot: true
       
       containers:
       - name: football-app # Name of the container within the Pod
@@ -52,6 +50,10 @@ spec:
         - containerPort: 5000 # The port your Flask app listens on inside the container
           name: http        # A name for the port
         
+        securityContext:
+          runAsUser: 1000
+          runAsGroup: 1000
+          runAsNonRoot: true
         # PROD: Environment Variables - Inject secrets from the 'football-app-secrets' Secret
         env:
         - name: FOOTBALL_API_KEY
