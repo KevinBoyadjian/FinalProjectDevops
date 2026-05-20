@@ -41,6 +41,8 @@ resource "helm_release" "prometheus_stack" {
   namespace  = kubernetes_namespace.monitoring.metadata[0].name
   version    = "51.0.0"
 
+  wait = false
+
   # Use the '=' sign and square brackets [] to match your provider version
   set = [
     # --- PROMETHEUS IAM ROLE (IRSA) ---

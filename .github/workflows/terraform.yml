@@ -70,8 +70,8 @@ jobs:
           cd terraform
           terraform destroy -auto-approve
 
-      - name: Terraform Destroy
-        if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'destroy'
-        run: |
-          cd terraform
-          terraform destroy -auto-approve
+#      - name: Terraform Destroy
+#        if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'destroy'
+#        run: |
+#          cd terraform
+#          terraform destroy -auto-approve
