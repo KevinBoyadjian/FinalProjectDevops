@@ -13,6 +13,16 @@ output "cluster_certificate_authority_data" {
     value       = module.eks_cluster.cluster_certificate_authority_data
 }
 
+output "oidc_provider_arn" {
+  description = "The ARN of the OIDC Provider for IRSA"
+  value       = module.eks_cluster.oidc_provider_arn
+}
+
+output "cluster_oidc_issuer_url" {
+  description = "The URL of the OIDC Issuer"
+  value       = module.eks_cluster.cluster_oidc_issuer_url
+}
+
 output "vpc_id" {
     description = "The ID of the VPC"
     value       = module.vpc.vpc_id

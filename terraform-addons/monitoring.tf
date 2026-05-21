@@ -5,6 +5,19 @@ resource "kubernetes_namespace" "monitoring" {
   }
 }
 
+resource "kubernetes_secret" "grafana_admin_password" {
+  metadata {
+    name      = "grafana-admin-password" # Standard name for this secret
+    namespace = kubernetes_namespace.monitoring.metadata[0].name
+  }
+  data = {
+    "admin-password" = var.grafana_admin_password # This pulls the value from your TF_VAR_
+    "admin-user"     = "admin"
+  }
+  type = "Opaque"
+}
+
+
 # 2. IAM INFRASTRUCTURE FOR PROMETHEUS (IRSA)
 # This creates the "Key" that allows Prometheus to talk to AWS
 data "aws_iam_policy_document" "prometheus_assume_role_policy" {
@@ -43,6 +56,13 @@ resource "helm_release" "prometheus_stack" {
 
   wait = false
 
+  depends_on = [
+    kubernetes_secret.grafana_admin_password, 
+    # Add other dependencies here if needed, e.g., the namespace
+    kubernetes_namespace.monitoring
+  ]
+
+
     # --- PROMETHEUS IAM ROLE (IRSA) ---
   set {
     name  = "prometheus.serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn"
@@ -77,10 +97,19 @@ resource "helm_release" "prometheus_stack" {
   }
 
   set {
-    name  = "grafana.adminPassword"
-    value = var.grafana_admin_password
+    name  = "grafana.admin.existingSecret"
+    value = kubernetes_secret.grafana_admin_password.metadata[0].name # Reference the new Secret resource
+  }
+  set {
+    name  = "grafana.admin.passwordKey"
+    value = "admin-password" # This matches the key defined in the kubernetes_secret resource
   }
   
+  set {
+    name  = "grafana.admin.userKey"
+    value = "admin-user" 
+  }
+
   set {
     name  = "grafana.ingress.enabled"
     value = "false"

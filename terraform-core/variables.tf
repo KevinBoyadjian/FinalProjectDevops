@@ -72,9 +72,3 @@ variable "common_tags" {
         project   = "DevSecOpsFlask"
     }
 }
-
-variable "grafana_admin_password" {
-    description = "The admin password for the Grafana dashboard"
-    type        = string
-    sensitive   = true
-}
