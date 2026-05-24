@@ -37,7 +37,7 @@ data "aws_iam_policy_document" "prometheus_assume_role_policy" {
 }
 
 resource "aws_iam_role" "prometheus_role" {
-  name               = "${var.project_name}-prometheus-role"
+  name               = "${data.terraform_remote_state.core.outputs.project_name}-prometheus-role"
   assume_role_policy = data.aws_iam_policy_document.prometheus_assume_role_policy.json
 }
 
