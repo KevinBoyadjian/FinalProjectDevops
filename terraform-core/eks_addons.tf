@@ -33,6 +33,15 @@ resource "aws_iam_role" "lb_controller" {
   name               = "${var.project_name}-lb-controller-role"
   assume_role_policy = data.aws_iam_policy_document.lb_controller_assume_role_policy.json
   tags = var.common_tags
+
+  # This acts as a "Graceful Shutdown" timer.
+  # When you run 'destroy', Terraform will wait 30 seconds before 
+  # deleting this role, giving the Load Balancer Controller time 
+  # to use this role to delete the real ALBs in AWS.
+  provisioner "local-exec" {
+    when    = destroy
+    command = "sleep 30"
+  }
 }
 
 # 3. This creates a custom IAM Policy using the content of your JSON file
@@ -154,31 +163,70 @@ resource "helm_release" "lb_controller" {
     null_resource.aws_lb_controller_crds
   ]
 
-  # Use the '=' sign and square brackets [] as the error requested
-  set = [
-    {
-      name  = "clusterName"
-      value = module.eks_cluster.cluster_name
-    },
-    {
-      name  = "serviceAccount.create"
-      value = "true"
-    },
-    {
-      name  = "serviceAccount.name"
-      value = "aws-load-balancer-controller"
-    },
-    {
-      name  = "serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn"
-      value = aws_iam_role.lb_controller.arn
-    },
-    {
-      name  = "region"
-      value = var.aws_region
-    },
-    {
-      name  = "vpcId"
-      value = module.vpc.vpc_id
-    }
-  ]
+
+  set {
+    name  = "clusterName"
+    value = module.eks_cluster.cluster_name
+  }
+  set {
+    name  = "serviceAccount.create"
+    value = "true"
+  }
+  set {
+    name  = "serviceAccount.name"
+    value = "aws-load-balancer-controller"
+  }
+  set {
+    name  = "serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn"
+    value = aws_iam_role.lb_controller.arn
+  }
+  set {
+    name  = "region"
+    value = var.aws_region
+  }
+  set {
+    name  = "vpcId"
+    value = module.vpc.vpc_id
+  }
 }
+
+# ---------------------------------------------------------------------------------------------------------------------
+# EXTERNAL DNS - HELM INSTALLATION (THE MISSING PIECE)
+# ---------------------------------------------------------------------------------------------------------------------
+
+resource "helm_release" "external_dns" {
+  name       = "external-dns"
+  repository = "https://kubernetes-sigs.github.io/external-dns/"
+  chart      = "external-dns"
+  namespace  = "kube-system"
+  version    = "1.13.1"
+
+  set {
+    name  = "serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn"
+    value = aws_iam_role.external_dns.arn
+  }
+
+  set {
+    name  = "serviceAccount.name"
+    value = "external-dns"
+  }
+  set {
+    name  = "sources"
+    value = "{ingress}"
+  }
+  set {
+    name  = "domainFilters"
+    value = "{top5score.com}"
+  }
+  set {
+    name  = "provider"
+    value = "aws"
+  }
+
+
+  # Ensure the Load Balancer Controller and IAM are ready first
+  depends_on = [
+    helm_release.lb_controller,
+    aws_iam_role_policy_attachment.external_dns_attach
+    ]
+  }

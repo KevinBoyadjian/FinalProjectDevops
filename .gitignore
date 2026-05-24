@@ -207,6 +207,7 @@ marimo/_lsp/
 __marimo__/
 
 # Terraform
+*tfvars
 terraform/.terraform/
 *.tfstate
 *.tfstate.backup
@@ -219,3 +220,6 @@ crash.log
 
 
 
+**/.terraform/
+*.tfstate
+*.tfstate.backup

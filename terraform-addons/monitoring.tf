@@ -5,6 +5,19 @@ resource "kubernetes_namespace" "monitoring" {
   }
 }
 
+resource "kubernetes_secret" "grafana_admin_password" {
+  metadata {
+    name      = "grafana-admin-password" # Standard name for this secret
+    namespace = kubernetes_namespace.monitoring.metadata[0].name
+  }
+  data = {
+    "admin-password" = var.grafana_admin_password # This pulls the value from your TF_VAR_
+    "admin-user"     = "admin"
+  }
+  type = "Opaque"
+}
+
+
 # 2. IAM INFRASTRUCTURE FOR PROMETHEUS (IRSA)
 # This creates the "Key" that allows Prometheus to talk to AWS
 data "aws_iam_policy_document" "prometheus_assume_role_policy" {
@@ -13,11 +26,11 @@ data "aws_iam_policy_document" "prometheus_assume_role_policy" {
     effect  = "Allow"
     principals {
       type        = "Federated"
-      identifiers = [module.eks_cluster.oidc_provider_arn]
+      identifiers = [data.terraform_remote_state.core.outputs.oidc_provider_arn]
     }
     condition {
       test     = "StringEquals"
-      variable = "${replace(module.eks_cluster.cluster_oidc_issuer_url, "https://", "")}:sub"
+      variable = "${replace(data.terraform_remote_state.core.outputs.cluster_oidc_issuer_url, "https://", "")}:sub"
       values   = ["system:serviceaccount:monitoring:kube-prometheus-stack-prometheus"]
     }
   }
@@ -41,46 +54,66 @@ resource "helm_release" "prometheus_stack" {
   namespace  = kubernetes_namespace.monitoring.metadata[0].name
   version    = "51.0.0"
 
-  # Use the '=' sign and square brackets [] to match your provider version
-  set = [
+  wait = false
+
+  depends_on = [
+    kubernetes_secret.grafana_admin_password, 
+    # Add other dependencies here if needed, e.g., the namespace
+    kubernetes_namespace.monitoring
+  ]
+
+
     # --- PROMETHEUS IAM ROLE (IRSA) ---
-    {
-      name  = "prometheus.serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn"
-      value = aws_iam_role.prometheus_role.arn
-    },
-    {
-      name  = "prometheus.serviceAccount.create"
-      value = "true"
-    },
-    {
-      name  = "prometheus.serviceAccount.name"
-      value = "kube-prometheus-stack-prometheus"
-    },
+  set {
+    name  = "prometheus.serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn"
+    value = aws_iam_role.prometheus_role.arn
+  }
+
+  set {
+    name  = "prometheus.serviceAccount.create"
+    value = "true"
+  }
+
+  set {
+    name  = "prometheus.serviceAccount.name"
+    value = "kube-prometheus-stack-prometheus"
+  }
 
     # --- OPTIMIZATION FOR T3.MEDIUM NODES ---
-    {
-      name  = "prometheus.prometheusSpec.resources.requests.memory"
-      value = "512Mi"
-    },
-    {
-      name  = "prometheus.prometheusSpec.retention"
-      value = "1d"
-    },
+  set {
+    name  = "prometheus.prometheusSpec.resources.requests.memory"
+    value = "512Mi"
+  }
+
+  set {
+    name  = "prometheus.prometheusSpec.retention"
+    value = "1d"
+  }
 
     # --- GRAFANA CONFIGURATION ---
-    {
-      name  = "grafana.enabled"
-      value = "true"
-    },
-    {
-      name  = "grafana.adminPassword"
-      value = "var.grafana_admin_password"
-    },
-    {
-      name  = "grafana.ingress.enabled"
-      value = "false"
-    }
-  ]
+  set {
+    name  = "grafana.enabled"
+    value = "true"
+  }
+
+  set {
+    name  = "grafana.admin.existingSecret"
+    value = kubernetes_secret.grafana_admin_password.metadata[0].name # Reference the new Secret resource
+  }
+  set {
+    name  = "grafana.admin.passwordKey"
+    value = "admin-password" # This matches the key defined in the kubernetes_secret resource
+  }
+  
+  set {
+    name  = "grafana.admin.userKey"
+    value = "admin-user" 
+  }
+
+  set {
+    name  = "grafana.ingress.enabled"
+    value = "false"
+  }
 }
 
 
