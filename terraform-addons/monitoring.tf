@@ -151,5 +151,10 @@ resource "kubernetes_ingress_v1" "grafana_ingress" {
     }
   }
 
+  # --- THE SMOOTHNESS FIXES ---
+  # 1. Don't let Terraform hang waiting for AWS to delete the ALB
+  wait_for_load_balancer = false
+
+  # 2. Ensures Ingress is created AFTER the app, and deleted BEFORE the app
   depends_on = [helm_release.prometheus_stack]
 }
