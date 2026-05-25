@@ -70,6 +70,7 @@ variable "common_tags" {
     default     = {
         ManagedBy = "Terraform"
         project   = "DevSecOpsFlask"
+    }
 }
 
 variable "alb_handshake_secret" {
