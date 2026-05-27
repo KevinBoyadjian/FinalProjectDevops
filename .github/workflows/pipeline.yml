@@ -35,7 +35,7 @@ jobs:
       
       - name: Build Docker image
         run: |
-          docker build -f docker/Dockerfile -t ${{ secrets.DOCKERHUB_USERNAME }}/football-app:${{ github.sha }} .
+          docker build --no-cache -f docker/Dockerfile -t ${{ secrets.DOCKERHUB_USERNAME }}/football-app:${{ github.sha }} .
           docker tag ${{ secrets.DOCKERHUB_USERNAME }}/football-app:${{ github.sha }} ${{ secrets.DOCKERHUB_USERNAME }}/football-app:latest
 
   # --- TRIVY SCAN: The Security Gate ---
