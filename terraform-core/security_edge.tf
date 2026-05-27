@@ -48,7 +48,7 @@ resource "aws_cloudfront_distribution" "main" {
   comment             = "CDN for ${var.project_name} Flask App"
   default_root_object = ""
 
-  aliases = ["top5score.com", "*.top5score.com"]
+  aliases = ["top5score.com", "www.top5score.com"]
 
   # Link the WAF we just created
   web_acl_id = aws_wafv2_web_acl.main.arn
