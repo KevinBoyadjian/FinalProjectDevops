@@ -30,16 +30,17 @@ module "eks_cluster" {
         }
     }
 
-      kevinb_local = {
-        principal_arn       = "arn:aws:iam::219127327432:user/kevinb"
-        policy_associations = {
-            admin = {
-                policy_arn   = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
-                access_scope = { type = "cluster" }
-            }
-        }      
+         kevinb_local = {
+            principal_arn       = "arn:aws:iam::219127327432:user/kevinb"
+            policy_associations = {
+                admin = {
+                    policy_arn   = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+                    access_scope = { type = "cluster" }
+                }
+            }      
+        }
     }
-    
+        
 # EKS Managed Node Group
     eks_managed_node_groups = {
         default = {
@@ -55,7 +56,7 @@ module "eks_cluster" {
             }
         }
     }
-}
+
     # Cluster endpoint access
     cluster_endpoint_private_access = true
     cluster_endpoint_public_access  = true
