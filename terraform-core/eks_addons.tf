@@ -23,6 +23,13 @@ data "aws_iam_policy_document" "lb_controller_assume_role_policy" {
   }
 }
 
+# Create a dedicated namespace for all monitoring tools
+resource "kubernetes_namespace" "monitoring" {
+  metadata {
+    name = "monitoring"
+  }
+}
+
 resource "aws_iam_role" "lb_controller" {
   name               = "${var.project_name}-lb-controller-role"
   assume_role_policy = data.aws_iam_policy_document.lb_controller_assume_role_policy.json
