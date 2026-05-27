@@ -22,7 +22,7 @@ metadata:
     alb.ingress.kubernetes.io/subnet-tags: kubernetes.io/role/elb=1
 
     # THE MAGIC LINE for top5score.com the "hidden" bridge between the Load Balancer and CloudFront.
-    external-dns.alpha.kubernetes.io/hostname: "api.top5score.com"
+    external-dns.alpha.kubernetes.io/hostname: "origin.top5score.com"
 
     # The secret handshake between CDN and Load Balancer (security_edge)
     alb.ingress.kubernetes.io/conditions.football-app-service: >
@@ -37,7 +37,7 @@ metadata:
 spec:
   ingressClassName: alb # PROD: Specifies that the AWS Load Balancer Controller should manage this Ingress
   rules:
-    - host: "api.top5score.com"
+    - host: "origin.top5score.com"
       http:
         paths:
           - path: / # Route all traffic hitting the root path
