@@ -67,21 +67,30 @@ resource "helm_release" "external_dns" {
     name  = "serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn"
     value = data.terraform_remote_state.core.outputs.external_dns_role_arn
   }
+  
   set {
     name  = "serviceAccount.name"
     value = "external-dns"
   }
+  
   set {
     name  = "sources"
     value = "{ingress}"
   }
+  
   set {
     name  = "domainFilters"
     value = "{top5score.com}"
   }
+  
   set {
     name  = "provider"
     value = "aws"
+  }
+
+  set {
+    name  = "policy"
+    value = "upsert-only" # <--- This will stop ExternalDNS from overwriting your manual records
   }
 
   depends_on = [helm_release.lb_controller]
