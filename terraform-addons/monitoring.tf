@@ -1,14 +1,7 @@
-# 1. Create a dedicated namespace for all monitoring tools
-resource "kubernetes_namespace" "monitoring" {
-  metadata {
-    name = "monitoring"
-  }
-}
-
 resource "kubernetes_secret" "grafana_admin_password" {
   metadata {
     name      = "grafana-admin-password" # Standard name for this secret
-    namespace = kubernetes_namespace.monitoring.metadata[0].name
+    namespace = data.terraform_remote_state.core.outputs.monitoring_namespace
   }
   data = {
     "admin-password" = var.grafana_admin_password # This pulls the value from your TF_VAR_
@@ -51,15 +44,14 @@ resource "helm_release" "prometheus_stack" {
   name       = "kube-prometheus-stack"
   repository = "https://prometheus-community.github.io/helm-charts"
   chart      = "kube-prometheus-stack"
-  namespace  = kubernetes_namespace.monitoring.metadata[0].name
+  namespace  = data.terraform_remote_state.core.outputs.monitoring_namespace  
   version    = "51.0.0"
 
   wait = false
 
   depends_on = [
-    kubernetes_secret.grafana_admin_password, 
-    # Add other dependencies here if needed, e.g., the namespace
-    kubernetes_namespace.monitoring
+    kubernetes_secret.grafana_admin_password 
+    # Add other dependencies here if needed
   ]
 
 
@@ -120,8 +112,8 @@ resource "helm_release" "prometheus_stack" {
 # 4. Create the AWS Load Balancer for the Grafana Dashboard
 resource "kubernetes_ingress_v1" "grafana_ingress" {
   metadata {
-    name      = "grafana-ingress"
-    namespace = kubernetes_namespace.monitoring.metadata[0].name
+    name        = "grafana-ingress"
+    namespace   = data.terraform_remote_state.core.outputs.monitoring_namespace
     annotations = {
       "alb.ingress.kubernetes.io/scheme"          = "internet-facing"
       "alb.ingress.kubernetes.io/target-type"     = "ip"

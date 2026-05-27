@@ -51,6 +51,9 @@ output "ssl_certificate_arn" {
   value = aws_acm_certificate.main.arn
 }
 
+output "monitoring_namespace" {
+  value = kubernetes_namespace.monitoring.metadata[0].name
+}
 
 # 1. The CloudFront URL
 # This is the public address of your global website
