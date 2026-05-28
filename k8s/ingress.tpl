@@ -22,7 +22,7 @@ metadata:
     alb.ingress.kubernetes.io/subnet-tags: kubernetes.io/role/elb=1
 
     # THE MAGIC LINE for top5score.com the "hidden" bridge between the Load Balancer and CloudFront.
-    external-dns.alpha.kubernetes.io/hostname: "api.top5score.com"
+    external-dns.alpha.kubernetes.io/hostname: "origin.top5score.com"
         # THE DYNAMIC FIX: Point the record to the CloudFront URL automatically
     external-dns.alpha.kubernetes.io/target: "${cloudfront_target}"
 

@@ -4,8 +4,8 @@
 resource "null_resource" "football_app_ingress" {
   # Triggers ensure it reruns if the hostname or secret_header_value changes
   triggers = {
-    hostname            = "api.top5score.com"
-    secret_header_value = "flask-devsecops-Qa@vD6Yu8!@#31oP-DvdcDVAR-7" # Replace with your actual secret
+    hostname            = "origin.top5score.com"
+    secret_header_value = var.alb_handshake_secret
     cluster_name        = data.terraform_remote_state.core.outputs.cluster_name
     
     # Ensure it only applies after external-dns is ready
@@ -29,7 +29,7 @@ aws eks update-kubeconfig --name ${data.terraform_remote_state.core.outputs.clus
 kubectl apply -f - <<EOF
 ${templatefile("../k8s/ingress.tpl", { 
 # Relative path to ingress.tpl
-  hostname            = "api.top5score.com",
+  hostname            = "origin.top5score.com",
   secret_header_value = var.alb_handshake_secret
 # THE DYNAMIC LINK:
   cloudfront_target   = data.terraform_remote_state.core.outputs.cloudfront_domain_name

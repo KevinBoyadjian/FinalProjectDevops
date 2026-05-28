@@ -1,8 +1,8 @@
 # 1. Request the SSL Certificate
 resource "aws_acm_certificate" "main" {
-  domain_name       = "top5score.com"
+  domain_name               = "top5score.com"
   subject_alternative_names = ["*.top5score.com"] # Protects subdomains like grafana. and api.
-  validation_method = "DNS"
+  validation_method         = "DNS"
 
   lifecycle {
     create_before_destroy = true
