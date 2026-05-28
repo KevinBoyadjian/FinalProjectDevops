@@ -7,6 +7,7 @@ resource "null_resource" "football_app_ingress" {
     hostname            = "origin.top5score.com"
     secret_header_value = var.alb_handshake_secret
     cluster_name        = data.terraform_remote_state.core.outputs.cluster_name
+    force_update = "v6"
     
     # Ensure it only applies after external-dns is ready
     external_dns_ready  = helm_release.external_dns.id 

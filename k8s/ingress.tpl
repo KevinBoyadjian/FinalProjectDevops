@@ -27,8 +27,7 @@ metadata:
     external-dns.alpha.kubernetes.io/target: "${cloudfront_target}"
 
     # The secret handshake between CDN and Load Balancer (security_edge)
-    alb.ingress.kubernetes.io/conditions.football-app-service: >
-      [{"field":"http-header","httpHeaderConfig":{"httpHeaderName": "X-Custom-Header", "values":["${secret_header_value}"]}}]
+    alb.ingress.kubernetes.io/conditions.football-app-service: '[{"field":"http-header","httpHeaderConfig":{"httpHeaderName": "X-Custom-Header", "values":["${secret_header_value}"]}}]'
 
 
     # Optional: Enable HTTP to HTTPS redirect and specify SSL certificate.
