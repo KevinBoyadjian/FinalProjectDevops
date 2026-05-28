@@ -42,9 +42,9 @@ jobs:
 
             # --- THE JANITOR STARTS HERE ---
                   # A. Go into Core folder to find the cluster name
-            cd terraform-addons
-            terraform init -reconfigure -upgrade
-            terraform refresh
+            # cd terraform-addons
+            # terraform init -reconfigure -upgrade
+            # terraform refresh
             # CLUSTER_NAME=$(terraform output -raw cluster_name)
                   # B. Connect the robot to the cluster
             # aws eks update-kubeconfig --name $CLUSTER_NAME --region us-east-1
