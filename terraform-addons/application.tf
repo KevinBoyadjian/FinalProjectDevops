@@ -29,8 +29,10 @@ aws eks update-kubeconfig --name ${data.terraform_remote_state.core.outputs.clus
 kubectl apply -f - <<EOF
 ${templatefile("../k8s/ingress.tpl", { 
 # Relative path to ingress.tpl
-  hostname            = "origin.top5score.com",
+  hostname            = "api.top5score.com",
   secret_header_value = var.alb_handshake_secret
+# THE DYNAMIC LINK:
+  cloudfront_target   = data.terraform_remote_state.core.outputs.cloudfront_domain_name
 })}
 EOF
 EOT
