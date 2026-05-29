@@ -40,23 +40,38 @@ jobs:
             terraform apply -auto-approve
           elif [ "${{ github.event.inputs.action }}" == "destroy" ]; then
 
-            mkdir empty_dir && cd empty_dir
+          elif [ "${{ github.event.inputs.action }}" == "destroy" ]; then
+            echo "Starting Janitor: Cleaning up Kubernetes resources before destroy..."
             
-            # 2. Create a temporary backend file so it connects to the same state
-            # COPY the backend block from your main providers.tf or backend.tf here
-            cat > backend.tf <<EOF
-            terraform {
-              backend "s3" {
-                  bucket = "ilyakevin-project-tf-state"
-                  key    = "state/core.tfstate"
-                  region = "us-east-1"
-                }
-              }
-          EOF
+            # 1. Initialize Core to get cluster name
+            cd ../terraform-core
+            terraform init -reconfigure -input=false
+            CLUSTER_NAME=$(terraform output -raw cluster_name 2>/dev/null || echo "")
             
-            # 3. Init and Force Clear
-                terraform init -reconfigure
-                terraform state list | xargs -I {} terraform state rm {} || echo "State already empty"
-
-            # terraform destroy -auto-approve
+            if [ -n "$CLUSTER_NAME" ]; then
+              echo "Cluster found: $CLUSTER_NAME. Cleaning up Kubernetes resources..."
+              
+              # 2. Connect to cluster
+              aws eks update-kubeconfig --name $CLUSTER_NAME --region us-east-1
+              
+              # 3. Delete Ingresses (triggers ALB cleanup)
+              echo "Deleting Ingresses..."
+              kubectl delete ingress --all -A --timeout=60s --ignore-not-found=true || true
+              
+              # 4. Delete LoadBalancer Services
+              echo "Deleting LoadBalancer Services..."
+              kubectl delete svc --all -A --field-selector=spec.type=LoadBalancer --timeout=60s --ignore-not-found=true || true
+              
+              # 5. Wait for AWS to clean up
+              echo "Waiting 30 seconds for AWS resources to cleanup..."
+              sleep 30
+            else
+              echo "Cluster not found in state. Skipping Kubernetes cleanup."
             fi
+            
+            # 6. Back to addons and destroy
+            cd ../terraform-addons
+            terraform init -reconfigure -input=false
+            echo "Destroying Add-ons infrastructure..."
+            terraform destroy -auto-approve -input=false
+          fi
