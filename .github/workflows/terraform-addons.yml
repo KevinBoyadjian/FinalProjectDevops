@@ -30,7 +30,7 @@ jobs:
       - name: Terraform Add-ons Logic
         working-directory: ./terraform-addons
           echo "current path $(pwd)"
-          la -la
+          ls -la
         env:
           TF_VAR_alb_handshake_secret: ${{ secrets.ALB_HANDSHAKE_SECRET }}
           TF_VAR_grafana_admin_password: ${{ secrets.GRAFANA_ADMIN_PASSWORD }}
