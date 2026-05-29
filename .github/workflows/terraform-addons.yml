@@ -28,20 +28,17 @@ jobs:
           terraform_version: "1.7.0"
 
       - name: Terraform Add-ons Logic
-        working-directory: ./terraform-addons
-          echo "current path $(pwd)"
-          ls -la
         env:
           TF_VAR_alb_handshake_secret: ${{ secrets.ALB_HANDSHAKE_SECRET }}
           TF_VAR_grafana_admin_password: ${{ secrets.GRAFANA_ADMIN_PASSWORD }}
         run: |
-          # cd terraform-addons
+          cd terraform-addons
           terraform init -reconfigure -upgrade
           if [ "${{ github.event.inputs.action }}" == "plan" ]; then
-            terraform plan -input=false
+            terraform plan
           elif [ "${{ github.event.inputs.action }}" == "apply" ]; then
-            terraform apply -auto-approve -input=false
+            terraform apply -auto-approve
           elif [ "${{ github.event.inputs.action }}" == "destroy" ]; then
             
-            terraform destroy -auto-approve -input=false
+            terraform destroy -auto-approve
           fi
