@@ -39,6 +39,24 @@ jobs:
           elif [ "${{ github.event.inputs.action }}" == "apply" ]; then
             terraform apply -auto-approve
           elif [ "${{ github.event.inputs.action }}" == "destroy" ]; then
-            terraform state list | xargs -I {} terraform state rm {} || echo "State already empty"
+
+            mkdir empty_dir && cd empty_dir
+            
+            # 2. Create a temporary backend file so it connects to the same state
+            # COPY the backend block from your main providers.tf or backend.tf here
+            cat > backend.tf <<EOF
+            terraform {
+              backend "s3" {
+                  bucket = "ilyakevin-project-tf-state"
+                  key    = "state/core.tfstate"
+                  region = "us-east-1"
+                }
+              }
+          EOF
+            
+            # 3. Init and Force Clear
+                terraform init -reconfigure
+                terraform state list | xargs -I {} terraform state rm {} || echo "State already empty"
+
             # terraform destroy -auto-approve
-          fi
+            fi
