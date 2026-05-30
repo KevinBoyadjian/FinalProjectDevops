@@ -17,7 +17,7 @@ class FootballAPIService:
     def __init__(self, app_config):
         self.api_key = app_config.get("FOOTBALL_API_KEY", "")
         self.base_url = app_config.get("FOOTBALL_API_BASE_URL", "")
-        self.season = app_config.get("SEASON", "2024")
+        self.season = app_config.get("SEASON", "2025")
 
     def _get_headers(self):
         return {
