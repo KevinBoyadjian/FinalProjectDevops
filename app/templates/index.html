@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>GoalScorePlus - Live Football Scores</title>
+    <title>Top5Score - Live Football Scores</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body class="dark-body">
@@ -12,7 +12,7 @@
         <div class="brand">
             <div class="brand-logo">⚽</div>
             <div>
-                <h1>GoalScorePlus</h1>
+                <h1>Top5Score</h1>
                 <p>Live football scores</p>
             </div>
         </div>
@@ -25,6 +25,8 @@
         <a class="league-tab {% if selected_league == 'la-liga' %}active{% endif %}" href="/?league=la-liga">La Liga</a>
         <a class="league-tab {% if selected_league == 'serie-a' %}active{% endif %}" href="/?league=serie-a">Serie A</a>
         <a class="league-tab {% if selected_league == 'ligue-1' %}active{% endif %}" href="/?league=ligue-1">Ligue 1</a>
+        <a class="league-tab {% if selected_league == 'bundesliga' %}active{% endif %}" href="/?league=bundesliga">Bundesliga</a>
+        <a class="league-tab {% if selected_league == 'champoins-league' %}active{% endif %}" href="/?league=champions-league">Champions League</a>
     </nav>
 
     <main class="content">
@@ -51,7 +53,7 @@
                 <div class="empty-state">
                     <div class="empty-icon">⚽</div>
                     <h3>Select a league to view matches</h3>
-                    <p>Click Premier League, La Liga, Serie A, or Ligue 1.</p>
+                    <p>Click a league above to view live and upcoming matches.</p>
                 </div>
             {% elif matches %}
                 {% for match in matches %}
