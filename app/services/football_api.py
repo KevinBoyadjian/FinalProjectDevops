@@ -4,10 +4,12 @@ import requests
 
 
 SUPPORTED_LEAGUES = {
-    "premier-league": {"id": 39, "name": "Premier League"},
-    "la-liga": {"id": 140, "name": "La Liga"},
-    "serie-a": {"id": 135, "name": "Serie A"},
-    "ligue-1": {"id": 61, "name": "Ligue 1"},
+    "premier-league":   {"id": 39, "name": "Premier League"},
+    "la-liga":          {"id": 140, "name": "La Liga"},
+    "serie-a":          {"id": 135, "name": "Serie A"},
+    "ligue-1":          {"id": 61, "name": "Ligue 1"},
+    "bundesliga":       {"id": 78, "name": "Bundesliga"},
+    "champions-league": {"id": 2, "name": "Champions League"},
 }
 
 
