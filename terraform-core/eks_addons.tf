@@ -29,6 +29,11 @@ resource "kubernetes_namespace" "monitoring" {
     name = "monitoring"
   }
 
+  # It forces Terraform to finish EVERYTHING in the EKS module 
+  # (including the background Access Entry creation) before 
+  # attempting to talk to the Kubernetes API.
+  depends_on = [module.eks]
+}
 
   # THE AUTOMATION HOOK:
   # This breaks the "Terminating" deadlock automatically
