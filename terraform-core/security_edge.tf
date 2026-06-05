@@ -1,3 +1,9 @@
+# 0 This is the dedicated place for all external lookups
+data "aws_route53_zone" "main" {
+  name         = "top5score.com"
+  private_zone = false
+}
+
 # 1. Create the WAF Web ACL
 resource "aws_wafv2_web_acl" "main" {
   name        = "${var.project_name}-web-acl"
@@ -111,4 +117,33 @@ resource "aws_cloudfront_distribution" "main" {
   }
 
   tags = var.common_tags
+}
+
+# This creates the DNS record that points top5score.com -> CloudFront
+resource "aws_route53_record" "root_domain" {
+  zone_id = data.aws_route53_zone.main.zone_id # This uses the fluid lookup we set up
+  name    = "top5score.com"
+  type    = "A"
+
+  alias {
+    # This dynamically gets the address of your CloudFront distribution
+    name                   = aws_cloudfront_distribution.main.domain_name
+    
+    # This tells Route 53 that the target is a CloudFront distribution
+    zone_id                = aws_cloudfront_distribution.main.hosted_zone_id
+    evaluate_target_health = false
+  }
+}
+
+# This handles the 'www' version as well
+resource "aws_route53_record" "www_domain" {
+  zone_id = data.aws_route53_zone.main.zone_id
+  name    = "www.top5score.com"
+  type    = "A"
+
+  alias {
+    name                   = aws_cloudfront_distribution.main.domain_name
+    zone_id                = aws_cloudfront_distribution.main.hosted_zone_id
+    evaluate_target_health = false
+  }
 }

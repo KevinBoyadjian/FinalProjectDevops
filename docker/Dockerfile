@@ -1,4 +1,4 @@
-# --- STAGE 1: Builder ---
+# --- STAGE 1: Builder --- Location: Temporary container on the GitHub Actions runner
 FROM python:3.12-alpine AS builder
 
 # Set the working directory
@@ -16,9 +16,10 @@ RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 # 2. THE FORCE PATCH: Overwrite any transitive downgrades into the same folder
 RUN pip install --no-cache-dir --upgrade --prefix=/install "urllib3>=2.7.0"
 
+# Only the /install folder is saved for Stage 2
 
 
-# --- STAGE 2: Final Runtime ---
+# --- STAGE 2: Final Runtime --- Location: New, clean container on the GitHub Actions runner
 FROM python:3.12-alpine
 
 # Set the working directory
