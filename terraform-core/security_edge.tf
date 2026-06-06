@@ -121,9 +121,11 @@ resource "aws_cloudfront_distribution" "main" {
 
 # This creates the DNS record that points top5score.com -> CloudFront
 resource "aws_route53_record" "root_domain" {
-  zone_id = data.aws_route53_zone.main.zone_id # This uses the fluid lookup we set up
-  name    = "top5score.com"
-  type    = "A"
+  zone_id         = data.aws_route53_zone.main.zone_id # This uses the fluid lookup we set up
+  name            = "top5score.com"
+  type            = "A"
+  allow_overwrite = true  # This is your "Skip the error and take over" button
+
 
   alias {
     # This dynamically gets the address of your CloudFront distribution
@@ -137,9 +139,12 @@ resource "aws_route53_record" "root_domain" {
 
 # This handles the 'www' version as well
 resource "aws_route53_record" "www_domain" {
-  zone_id = data.aws_route53_zone.main.zone_id
-  name    = "www.top5score.com"
-  type    = "A"
+  zone_id         = data.aws_route53_zone.main.zone_id
+  name            = "www.top5score.com"
+  type            = "A"
+  allow_overwrite = true  # This is your "Skip the error and take over" button
+
+
 
   alias {
     name                   = aws_cloudfront_distribution.main.domain_name
