@@ -88,6 +88,8 @@ resource "helm_release" "external_dns" {
     value = "aws"
   }
 
+
+
   set {
     name  = "policy"
     value = "upsert-only" # <--- This will stop ExternalDNS from overwriting your manual records
