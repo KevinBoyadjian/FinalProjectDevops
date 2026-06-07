@@ -90,7 +90,12 @@ resource "helm_release" "external_dns" {
 
   set {
     name  = "txtOwnerId"
-    value = "top5score-v1" 
+    value = "cluster-v2" 
+  }
+
+  set {
+    name  = "txtPrefix"
+    value = "cname-" 
   }
 
   set {
