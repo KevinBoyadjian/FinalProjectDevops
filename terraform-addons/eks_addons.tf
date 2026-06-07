@@ -88,6 +88,15 @@ resource "helm_release" "external_dns" {
     value = "aws"
   }
 
+  set {
+    name  = "txtOwnerId"
+    value = "top5score-v1" 
+  }
+
+  set {
+    name  = "registry"
+    value = "txt"
+  }
 
 
   set {
