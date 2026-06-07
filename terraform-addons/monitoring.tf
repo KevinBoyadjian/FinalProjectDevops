@@ -119,6 +119,7 @@ resource "kubernetes_ingress_v1" "grafana_ingress" {
       "alb.ingress.kubernetes.io/target-type"     = "ip"
       "alb.ingress.kubernetes.io/subnet-tags"     = "kubernetes.io/role/elb=1"
       "external-dns.alpha.kubernetes.io/hostname" = "grafana.top5score.com"
+      "kubernetes.io/ingress.class"               = "alb"
     }
   }
 
