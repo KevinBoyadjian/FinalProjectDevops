@@ -107,3 +107,18 @@ jobs:
           # to use the new image tagged with the current commit SHA.
           
           kubectl set image deployment/football-app-deployment football-app=${{ secrets.DOCKERHUB_USERNAME }}/football-app:${{ github.sha }} -n default
+
+
+      # 5. Clear CloudFront Cache automatically (THIS IS A NEW, SEPARATE STEP)
+      - name: Invalidate CloudFront Cache
+        run: |
+          echo "Finding CloudFront Distribution for top5score.com..."
+          DIST_ID=$(aws cloudfront list-distributions --query "DistributionList.Items[?Aliases.Items!=null] | [?contains(Aliases.Items, 'top5score.com')].Id | [0]" --output text)
+          
+          if [ "$DIST_ID" != "None" ] && [ -n "$DIST_ID" ]; then
+            echo "Found Distribution ID: $DIST_ID. Creating invalidation..."
+            aws cloudfront create-invalidation --distribution-id $DIST_ID --paths "/*"
+            echo "Invalidation triggered successfully!"
+          else
+            echo "CloudFront distribution not found. Skipping invalidation."
+          fi
