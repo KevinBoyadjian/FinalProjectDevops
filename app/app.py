@@ -9,13 +9,15 @@ app.config.from_object(Config)
 
 football_service = FootballAPIService(app.config)
 
-@app.route('/health')
+
+@app.route("/health")
 def health_check():
     """
     Health check endpoint for Kubernetes Liveness and Readiness probes.
     Returns a 200 OK status to indicate the container is running.
     """
     return "OK", 200
+
 
 @app.route("/")
 def index():
@@ -57,7 +59,7 @@ def api_live():
     if not league:
         return jsonify({
             "mode": None,
-            "matches": []
+            "matches": [],
         })
 
     matches = football_service.get_live_matches(league)
@@ -65,15 +67,15 @@ def api_live():
 
     if not matches:
         matches = football_service.get_upcoming_matches(league)
-        mode    = "upcoming"
+        mode = "upcoming"
 
     return jsonify({
         "mode": mode,
-        "matches": matches
+        "matches": matches,
     })
 
 
 if __name__ == "__main__":
-    # We set debug=False for security
-    # We add '# nosec' to tell Bandit "I know what I'm doing with the 0.0.0.0 bind"
+    # We set debug=False for security.
+    # We add '# nosec' to tell Bandit that the 0.0.0.0 bind is intentional for container/Kubernetes usage.
     app.run(host="0.0.0.0", port=5000, debug=False)  # nosec

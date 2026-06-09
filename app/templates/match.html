@@ -11,40 +11,114 @@
         <a href="/" class="back-link">← Back to live scores</a>
 
         <div class="match-details-card">
-            <h1>{{ match.home_team }} {{ match.home_score }} - {{ match.away_score }} {{ match.away_team }}</h1>
-            <p>Status: {{ match.status }} | Minute: {{ match.minute }}</p>
+            {% if match.home_score is not none and match.away_score is not none %}
+                <h1>
+                    {{ match.home_team }}
+                    {{ match.home_score }}
+                    -
+                    {{ match.away_score }}
+                    {{ match.away_team }}
+                </h1>
+            {% else %}
+                <h1>{{ match.home_team }} vs {{ match.away_team }}</h1>
+            {% endif %}
+
+            <p>
+                Status:
+                {% if match.status == "NS" %}
+                    Not started
+                {% elif match.status == "FT" %}
+                    Full time
+                {% elif match.status == "HT" %}
+                    Half time
+                {% else %}
+                    {{ match.status }}
+                {% endif %}
+            </p>
+
+            {% if match.minute %}
+                <p>Minute: {{ match.minute }}'</p>
+            {% endif %}
+
+            {% if match.date_jerusalem %}
+                <p>Kick-off: {{ match.date_jerusalem }} Jerusalem time</p>
+            {% elif match.date %}
+                <p>Kick-off: {{ match.date }}</p>
+            {% endif %}
+
+            {% if match.stage %}
+                <p>Stage: {{ match.stage }}</p>
+            {% endif %}
+
+            {% if match.group %}
+                <p>Group: {{ match.group }}</p>
+            {% endif %}
+
+            {% if match.stadium %}
+                <p>Stadium: {{ match.stadium }}</p>
+            {% endif %}
+
+            {% if match.city %}
+                <p>City: {{ match.city }}</p>
+            {% endif %}
         </div>
 
         <div class="events-card">
             <h2>Events</h2>
-            <ul class="clean-list">
-                {% for event in match.events %}
-                <li>{{ event.minute }}' - {{ event.team }} - {{ event.type }} - {{ event.player }}</li>
-                {% endfor %}
-            </ul>
+
+            {% if match.events %}
+                <ul class="clean-list">
+                    {% for event in match.events %}
+                        <li>
+                            {{ event.minute }}'
+                            -
+                            {{ event.team }}
+                            -
+                            {{ event.type }}
+                            -
+                            {{ event.player }}
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>No events available yet. Events will appear after the match starts.</p>
+            {% endif %}
         </div>
 
         <div class="lineups-card">
             <h2>Lineups</h2>
-            <div class="lineups-grid">
-                <div>
-                    <h3>Home</h3>
-                    <ul class="clean-list">
-                        {% for player in match.lineups.home %}
-                        <li>{{ player }}</li>
-                        {% endfor %}
-                    </ul>
-                </div>
 
-                <div>
-                    <h3>Away</h3>
-                    <ul class="clean-list">
-                        {% for player in match.lineups.away %}
-                        <li>{{ player }}</li>
-                        {% endfor %}
-                    </ul>
+            {% if match.lineups.home or match.lineups.away %}
+                <div class="lineups-grid">
+                    <div>
+                        <h3>Home</h3>
+                        {% if match.lineups.home %}
+                            <ul class="clean-list">
+                                {% for player in match.lineups.home %}
+                                    <li>{{ player }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% else %}
+                            <p>No home lineup available yet.</p>
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        <h3>Away</h3>
+                        {% if match.lineups.away %}
+                            <ul class="clean-list">
+                                {% for player in match.lineups.away %}
+                                    <li>{{ player }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% else %}
+                            <p>No away lineup available yet.</p>
+                        {% endif %}
+                    </div>
                 </div>
-            </div>
+            {% else %}
+                <p>Lineups are not available yet. They are usually published closer to kick-off.</p>
+            {% endif %}
         </div>
     </div>
 </body>

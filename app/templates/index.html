@@ -26,7 +26,9 @@
         <a class="league-tab {% if selected_league == 'serie-a' %}active{% endif %}" href="/?league=serie-a">Serie A</a>
         <a class="league-tab {% if selected_league == 'ligue-1' %}active{% endif %}" href="/?league=ligue-1">Ligue 1</a>
         <a class="league-tab {% if selected_league == 'bundesliga' %}active{% endif %}" href="/?league=bundesliga">Bundesliga</a>
-        <a class="league-tab {% if selected_league == 'champoins-league' %}active{% endif %}" href="/?league=champions-league">Champions League</a>
+        <a class="league-tab {% if selected_league == 'champions-league' %}active{% endif %}" href="/?league=champions-league">Champions League</a>
+		<a class="league-tab {% if selected_league == 'world-cup-2026' %}active{% endif %}" href="/?league=world-cup-2026">FIFA World Cup 2026
+</a>
     </nav>
 
     <main class="content">
@@ -102,3 +104,4 @@
 <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>
 </html>
+

@@ -1,23 +1,74 @@
 from datetime import date, timedelta
+from pathlib import Path
+import json
 
 import requests
 
 
 SUPPORTED_LEAGUES = {
-    "premier-league":   {"id": 39, "name": "Premier League"},
-    "la-liga":          {"id": 140, "name": "La Liga"},
-    "serie-a":          {"id": 135, "name": "Serie A"},
-    "ligue-1":          {"id": 61, "name": "Ligue 1"},
-    "bundesliga":       {"id": 78, "name": "Bundesliga"},
-    "champions-league": {"id": 2, "name": "Champions League"},
+    "premier-league": {
+        "id": 39,
+        "name": "Premier League",
+        "season": "2025",
+        "source": "api-football",
+    },
+    "la-liga": {
+        "id": 140,
+        "name": "La Liga",
+        "season": "2025",
+        "source": "api-football",
+    },
+    "serie-a": {
+        "id": 135,
+        "name": "Serie A",
+        "season": "2025",
+        "source": "api-football",
+    },
+    "ligue-1": {
+        "id": 61,
+        "name": "Ligue 1",
+        "season": "2025",
+        "source": "api-football",
+    },
+    "bundesliga": {
+        "id": 78,
+        "name": "Bundesliga",
+        "season": "2025",
+        "source": "api-football",
+    },
+    "champions-league": {
+        "id": 2,
+        "name": "Champions League",
+        "season": "2025",
+        "source": "api-football",
+    },
+
+    # ADDED: FIFA World Cup 2026 from local JSON file
+    "world-cup-2026": {
+        "id": 1,
+        "name": "FIFA World Cup 2026",
+        "season": "2026",
+        "source": "local-json",
+    },
 }
 
 
 class FootballAPIService:
     def __init__(self, app_config):
         self.api_key = app_config.get("FOOTBALL_API_KEY", "")
-        self.base_url = app_config.get("FOOTBALL_API_BASE_URL", "")
-        self.season = app_config.get("SEASON", "2025")
+        self.base_url = app_config.get(
+            "FOOTBALL_API_BASE_URL",
+            "https://v3.football.api-sports.io",
+        )
+        self.default_season = app_config.get("SEASON", "2025")
+
+        # ADDED: local JSON file for FIFA World Cup 2026
+        # Expected path:
+        # app/data/world-cup-2026.json
+        self.worldcup_json_path = Path(__file__).resolve().parents[1] / "data" / "world-cup-2026.json"
+
+    def get_supported_leagues(self):
+        return SUPPORTED_LEAGUES
 
     def _get_headers(self):
         return {
@@ -27,22 +78,30 @@ class FootballAPIService:
     def _get(self, endpoint, params=None):
         url = f"{self.base_url}/{endpoint}"
 
-        response = requests.get(
-            url,
-            headers=self._get_headers(),
-            params=params,
-            timeout=20
-        )
+        try:
+            response = requests.get(
+                url,
+                headers=self._get_headers(),
+                params=params,
+                timeout=20,
+            )
 
-        # DEBUG TEMPORAIRE
-        print("===================================")
-        print("URL:", response.url)
-        print("STATUS:", response.status_code)
-        print("RESPONSE:", response.text[:500])
-        print("===================================")
+            print("===================================")
+            print("URL:", response.url)
+            print("STATUS:", response.status_code)
+            print("RESPONSE:", response.text[:500])
+            print("===================================")
 
-        response.raise_for_status()
-        return response.json()
+            response.raise_for_status()
+            return response.json()
+
+        except requests.exceptions.HTTPError as error:
+            print("API HTTP ERROR:", error)
+            return {"response": []}
+
+        except requests.exceptions.RequestException as error:
+            print("API REQUEST ERROR:", error)
+            return {"response": []}
 
     def _format_fixture(self, item):
         return {
@@ -57,16 +116,100 @@ class FootballAPIService:
             "date": item["fixture"]["date"],
         }
 
+    def _format_worldcup_match(self, item):
+        return {
+            "id": item.get("id"),
+            "league": item.get("league", "FIFA World Cup 2026"),
+            "home_team": item.get("home_team", "TBD"),
+            "away_team": item.get("away_team", "TBD"),
+            "home_score": item.get("home_score"),
+            "away_score": item.get("away_score"),
+            "status": item.get("status", "NS"),
+            "minute": item.get("minute", 0),
+            "date": item.get("date", ""),
+            "stadium": item.get("stadium", ""),
+            "city": item.get("city", ""),
+            "group": item.get("group", ""),
+            "stage": item.get("stage", "Group Stage"),
+            "source": item.get("source", "FIFA official schedule"),
+            "events": item.get("events", []),
+            "lineups": item.get(
+                "lineups",
+                {
+                    "home": [],
+                    "away": [],
+                },
+            ),
+        }
+
+    def _load_worldcup_json(self, limit=None):
+        if not self.worldcup_json_path.exists():
+            print(f"WORLD CUP JSON NOT FOUND: {self.worldcup_json_path}")
+            return []
+
+        try:
+            with open(self.worldcup_json_path, "r", encoding="utf-8") as file:
+                data = json.load(file)
+
+            matches = data.get("matches", [])
+
+            formatted_matches = [
+                self._format_worldcup_match(match)
+                for match in matches
+            ]
+
+            formatted_matches = sorted(
+                formatted_matches,
+                key=lambda match: match.get("date", ""),
+            )
+
+            if limit:
+                return formatted_matches[:limit]
+
+            return formatted_matches
+
+        except json.JSONDecodeError as error:
+            print("WORLD CUP JSON ERROR: invalid JSON format")
+            print(error)
+            return []
+
+        except OSError as error:
+            print("WORLD CUP JSON ERROR: cannot read file")
+            print(error)
+            return []
+
     def _get_league_ids(self, league_key):
         if league_key and league_key in SUPPORTED_LEAGUES:
             return [SUPPORTED_LEAGUES[league_key]["id"]]
 
-        return [league["id"] for league in SUPPORTED_LEAGUES.values()]
+        return [
+            league["id"]
+            for league in SUPPORTED_LEAGUES.values()
+            if league.get("source") == "api-football"
+        ]
 
-    def get_supported_leagues(self):
-        return SUPPORTED_LEAGUES
+    def _get_league_season(self, league_key):
+        if league_key and league_key in SUPPORTED_LEAGUES:
+            return SUPPORTED_LEAGUES[league_key].get(
+                "season",
+                self.default_season,
+            )
+
+        return self.default_season
 
     def get_live_matches(self, league_key=None):
+        # ADDED: World Cup 2026 is loaded from local JSON
+        if league_key == "world-cup-2026":
+            matches = self._load_worldcup_json()
+
+            live_statuses = ["1H", "HT", "2H", "ET", "BT", "P", "SUSP", "INT", "LIVE"]
+
+            return [
+                match
+                for match in matches
+                if match.get("status") in live_statuses
+            ]
+
         league_ids = self._get_league_ids(league_key)
         matches = []
 
@@ -75,8 +218,8 @@ class FootballAPIService:
                 "fixtures",
                 {
                     "live": "all",
-                    "league": league_id
-                }
+                    "league": league_id,
+                },
             )
 
             matches.extend([
@@ -87,10 +230,25 @@ class FootballAPIService:
         return matches
 
     def get_upcoming_matches(self, league_key=None, limit=10):
+        # ADDED: World Cup 2026 is loaded from local JSON
+        if league_key == "world-cup-2026":
+            matches = self._load_worldcup_json()
+
+            upcoming_statuses = ["NS", "TBD", "PST"]
+
+            upcoming_matches = [
+                match
+                for match in matches
+                if match.get("status") in upcoming_statuses
+            ]
+
+            return upcoming_matches[:limit]
+
         league_ids = self._get_league_ids(league_key)
         matches = []
 
         today = date.today()
+        season = self._get_league_season(league_key)
 
         for league_id in league_ids:
             for day_offset in range(0, 14):
@@ -100,9 +258,9 @@ class FootballAPIService:
                     "fixtures",
                     {
                         "league": league_id,
-                        "season": self.season,
-                        "date": match_date.isoformat()
-                    }
+                        "season": season,
+                        "date": match_date.isoformat(),
+                    },
                 )
 
                 matches.extend([
@@ -116,6 +274,13 @@ class FootballAPIService:
         return matches[:limit]
 
     def get_match_details(self, match_id):
+        # ADDED: World Cup match details from local JSON
+        worldcup_matches = self._load_worldcup_json()
+
+        for match in worldcup_matches:
+            if str(match.get("id")) == str(match_id):
+                return match
+
         data = self._get("fixtures", {"id": match_id})
         response = data.get("response", [])
 
@@ -126,18 +291,19 @@ class FootballAPIService:
 
         events_data = self._get(
             "fixtures/events",
-            {"fixture": match_id}
+            {"fixture": match_id},
         ).get("response", [])
 
         lineups_data = self._get(
             "fixtures/lineups",
-            {"fixture": match_id}
+            {"fixture": match_id},
         ).get("response", [])
 
         home_name = item["teams"]["home"]["name"]
         away_name = item["teams"]["away"]["name"]
 
         events = []
+
         for event in events_data:
             events.append({
                 "minute": event.get("time", {}).get("elapsed", 0),
@@ -151,6 +317,7 @@ class FootballAPIService:
 
         for lineup in lineups_data:
             team_name = lineup.get("team", {}).get("name", "")
+
             players = [
                 player["player"].get("name", "")
                 for player in lineup.get("startXI", [])
@@ -159,33 +326,42 @@ class FootballAPIService:
 
             if team_name == home_name:
                 home_lineup = players
+
             elif team_name == away_name:
                 away_lineup = players
 
         match = self._format_fixture(item)
+
         match["events"] = events
+
         match["lineups"] = {
             "home": home_lineup,
-            "away": away_lineup
+            "away": away_lineup,
         }
 
         return match
 
     def get_standings(self, league_key="premier-league"):
+        if league_key == "world-cup-2026":
+            return []
+
         league = SUPPORTED_LEAGUES.get(
             league_key,
-            SUPPORTED_LEAGUES["premier-league"]
+            SUPPORTED_LEAGUES["premier-league"],
         )
+
+        season = league.get("season", self.default_season)
 
         data = self._get(
             "standings",
             {
                 "league": league["id"],
-                "season": self.season
-            }
+                "season": season,
+            },
         )
 
         response = data.get("response", [])
+
         if not response:
             return []
 
