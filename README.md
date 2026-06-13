@@ -54,4 +54,4 @@ The project covers:
 ## Contributors
 
 * Kevin Boyadjian
-* Ilya
+* Ilya Blechman
