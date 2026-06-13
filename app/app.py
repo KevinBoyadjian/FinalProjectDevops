@@ -3,7 +3,6 @@ from flask import Flask, jsonify, render_template, request
 from config import Config
 from services.football_api import FootballAPIService
 
-
 app = Flask(__name__)
 app.config.from_object(Config)
 
@@ -13,8 +12,8 @@ football_service = FootballAPIService(app.config)
 @app.route("/health")
 def health_check():
     """
-    Health check endpoint for Kubernetes Liveness and Readiness probes.
-    Returns a 200 OK status to indicate the container is running.
+    Health check endpoint for Kubernetes liveness and readiness probes.
+    Returns 200 OK to indicate that the container is running.
     """
     return "OK", 200
 
@@ -22,11 +21,87 @@ def health_check():
 @app.route("/")
 def index():
     league = request.args.get("league")
+    selected_date = request.args.get("date")
 
     matches = []
     mode = None
+    available_dates = []
 
     if league:
+        available_dates = football_service.get_available_dates(league)
+
+        if league == "world-cup-2026":
+            if not selected_date and available_dates:
+                selected_date = football_service.get_default_date(available_dates)
+
+            matches = football_service.get_matches_by_date(
+                league_key=league,
+                selected_date=selected_date,
+            )
+            mode = "date"
+        else:
+            if selected_date:
+                matches = football_service.get_matches_by_date(
+                    league_key=league,
+                    selected_date=selected_date,
+                )
+                mode = "date"
+            else:
+                matches = football_service.get_live_matches(league)
+                mode = "live"
+
+                if not matches:
+                    matches = football_service.get_upcoming_matches(league)
+                    mode = "upcoming"
+
+    return render_template(
+        "index.html",
+        matches=matches,
+        mode=mode,
+        selected_league=league,
+        selected_date=selected_date,
+        available_dates=available_dates,
+    )
+
+
+@app.route("/match/<match_id>")
+def match_details(match_id):
+    selected_league = request.args.get("league")
+    selected_date = request.args.get("date")
+
+    match = football_service.get_match_details(match_id)
+
+    if match is None:
+        return "Match not found", 404
+
+    return render_template(
+        "match.html",
+        match=match,
+        selected_league=selected_league,
+        selected_date=selected_date,
+    )
+
+
+@app.route("/api/live")
+def api_live():
+    league = request.args.get("league")
+    selected_date = request.args.get("date")
+
+    if not league:
+        return jsonify(
+            {
+                "mode": None,
+                "matches": [],
+            }
+        )
+
+    if selected_date:
+        matches = football_service.get_matches_by_date(
+            league_key=league,
+            selected_date=selected_date,
+        )
+        mode = "date"
+    else:
         matches = football_service.get_live_matches(league)
         mode = "live"
 
@@ -34,48 +109,15 @@ def index():
             matches = football_service.get_upcoming_matches(league)
             mode = "upcoming"
 
-    return render_template(
-        "index.html",
-        matches=matches,
-        mode=mode,
-        selected_league=league,
+    return jsonify(
+        {
+            "mode": mode,
+            "matches": matches,
+        }
     )
-
-
-@app.route("/match/<int:match_id>")
-def match_details(match_id):
-    match = football_service.get_match_details(match_id)
-
-    if match is None:
-        return "Match not found", 404
-
-    return render_template("match.html", match=match)
-
-
-@app.route("/api/live")
-def api_live():
-    league = request.args.get("league")
-
-    if not league:
-        return jsonify({
-            "mode": None,
-            "matches": [],
-        })
-
-    matches = football_service.get_live_matches(league)
-    mode = "live"
-
-    if not matches:
-        matches = football_service.get_upcoming_matches(league)
-        mode = "upcoming"
-
-    return jsonify({
-        "mode": mode,
-        "matches": matches,
-    })
 
 
 if __name__ == "__main__":
     # We set debug=False for security.
-    # We add '# nosec' to tell Bandit that the 0.0.0.0 bind is intentional for container/Kubernetes usage.
-    app.run(host="0.0.0.0", port=5000, debug=False)  # nosec
+    # The 0.0.0.0 bind is intentional for Docker/Kubernetes usage.
+    app.run(host="0.0.0.0", port=5000, debug=False)  # nosec B104

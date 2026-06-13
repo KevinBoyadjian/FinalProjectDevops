@@ -1,107 +1,197 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Top5Score - Live Football Scores</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Top5Score - Live Football Scores</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
 </head>
+
 <body class="dark-body">
-<div class="app-shell">
-
+  <main class="app-shell">
     <header class="topbar">
-        <div class="brand">
-            <div class="brand-logo">⚽</div>
-            <div>
-                <h1>Top5Score</h1>
-                <p>Live football scores</p>
-            </div>
+      <div class="brand">
+        <div class="brand-logo">⚽</div>
+        <div>
+          <h1>Top5Score</h1>
+          <p>Live football scores</p>
         </div>
+      </div>
 
-        <button id="refresh-btn" class="refresh-btn">Refresh</button>
+      <a
+        class="refresh-btn"
+        href="{{ url_for('index', league=selected_league, date=selected_date) if selected_league else url_for('index') }}"
+      >
+        Refresh
+      </a>
     </header>
 
     <nav class="league-tabs">
-        <a class="league-tab {% if selected_league == 'premier-league' %}active{% endif %}" href="/?league=premier-league">Premier League</a>
-        <a class="league-tab {% if selected_league == 'la-liga' %}active{% endif %}" href="/?league=la-liga">La Liga</a>
-        <a class="league-tab {% if selected_league == 'serie-a' %}active{% endif %}" href="/?league=serie-a">Serie A</a>
-        <a class="league-tab {% if selected_league == 'ligue-1' %}active{% endif %}" href="/?league=ligue-1">Ligue 1</a>
-        <a class="league-tab {% if selected_league == 'bundesliga' %}active{% endif %}" href="/?league=bundesliga">Bundesliga</a>
-        <a class="league-tab {% if selected_league == 'champions-league' %}active{% endif %}" href="/?league=champions-league">Champions League</a>
-		<a class="league-tab {% if selected_league == 'world-cup-2026' %}active{% endif %}" href="/?league=world-cup-2026">FIFA World Cup 2026
-</a>
+      <a
+        class="league-tab {% if selected_league == 'premier-league' %}active{% endif %}"
+        href="{{ url_for('index', league='premier-league') }}"
+      >
+        Premier League
+      </a>
+
+      <a
+        class="league-tab {% if selected_league == 'la-liga' %}active{% endif %}"
+        href="{{ url_for('index', league='la-liga') }}"
+      >
+        La Liga
+      </a>
+
+      <a
+        class="league-tab {% if selected_league == 'serie-a' %}active{% endif %}"
+        href="{{ url_for('index', league='serie-a') }}"
+      >
+        Serie A
+      </a>
+
+      <a
+        class="league-tab {% if selected_league == 'ligue-1' %}active{% endif %}"
+        href="{{ url_for('index', league='ligue-1') }}"
+      >
+        Ligue 1
+      </a>
+
+      <a
+        class="league-tab {% if selected_league == 'bundesliga' %}active{% endif %}"
+        href="{{ url_for('index', league='bundesliga') }}"
+      >
+        Bundesliga
+      </a>
+
+      <a
+        class="league-tab {% if selected_league == 'champions-league' %}active{% endif %}"
+        href="{{ url_for('index', league='champions-league') }}"
+      >
+        Champions League
+      </a>
+
+      <a
+        class="league-tab {% if selected_league == 'world-cup-2026' %}active{% endif %}"
+        href="{{ url_for('index', league='world-cup-2026') }}"
+      >
+        FIFA World Cup 2026
+      </a>
     </nav>
 
-    <main class="content">
+    {% if selected_league and available_dates %}
+      <nav class="date-tabs">
+        {% for match_date in available_dates %}
+          <a
+            class="date-tab {% if selected_date == match_date %}active{% endif %}"
+            href="{{ url_for('index', league=selected_league, date=match_date) }}"
+          >
+            {{ match_date }}
+          </a>
+        {% endfor %}
+      </nav>
+    {% endif %}
+
+    <section class="content">
+      {% if not selected_league %}
         <section class="hero-panel">
-            <div>
-                {% if not selected_league %}
-                    <h2>Select a league</h2>
-                    <p>Choose one league above to load live matches.</p>
-                {% elif mode == "live" %}
-                    <h2>Today's Live Matches</h2>
-                    <p>Real-time football scores, events and match details.</p>
-                {% else %}
-                    <h2>Upcoming Matches</h2>
-                    <p>No live match right now. Showing upcoming matches.</p>
+          <div>
+            <h2>Select a league</h2>
+            <p>Choose one league above to load live matches.</p>
+          </div>
+        </section>
+      {% elif mode == "live" %}
+        <section class="hero-panel">
+          <div>
+            <h2>Today's Live Matches</h2>
+            <p>Real-time football scores, events and match details.</p>
+          </div>
+        </section>
+      {% endif %}
+
+      <section class="matches-grid">
+        {% if not selected_league %}
+          <div class="empty-state">
+            <div class="empty-icon">⚽</div>
+            <h3>Select a league to view matches</h3>
+            <p>Click a league above to view live and upcoming matches.</p>
+          </div>
+        {% elif matches %}
+          {% for match in matches %}
+            <article class="match-card">
+              <div class="match-status">
+                <div>
+                  {% if match.status in ["1H", "HT", "2H", "ET", "BT", "P", "SUSP", "INT", "LIVE", "FT"] %}
+                    <span class="live-badge">{{ match.status }}</span>
+                  {% endif %}
+                </div>
+
+                <span class="minute">
+                  {% if match.minute %}
+                    {{ match.minute }}'
+                  {% elif match.date %}
+                    {{ match.date[:10] }}
+                  {% else %}
+                    Upcoming
+                  {% endif %}
+                </span>
+              </div>
+
+              <div class="teams">
+                <div class="team-row">
+                  <span class="team-name">{{ match.home_team }}</span>
+                  <span class="team-score">
+                    {% if match.home_score is not none %}
+                      {{ match.home_score }}
+                    {% else %}
+                      0
+                    {% endif %}
+                  </span>
+                </div>
+
+                <div class="team-row">
+                  <span class="team-name">{{ match.away_team }}</span>
+                  <span class="team-score">
+                    {% if match.away_score is not none %}
+                      {{ match.away_score }}
+                    {% else %}
+                      0
+                    {% endif %}
+                  </span>
+                </div>
+              </div>
+
+              <div class="card-footer">
+                <p class="competition-name">{{ match.league }}</p>
+
+                {% if match.stage %}
+                  <p class="match-meta">{{ match.stage }}</p>
                 {% endif %}
-            </div>
 
-            {% if selected_league %}
-            {% endif %}
-        </section>
+                {% if match.stadium or match.city %}
+                  <p class="match-meta">
+                    {% if match.stadium %}{{ match.stadium }}{% endif %}
+                    {% if match.stadium and match.city %} - {% endif %}
+                    {% if match.city %}{{ match.city }}{% endif %}
+                  </p>
+                {% endif %}
 
-        <section id="matches-container" class="matches-grid" data-league="{{ selected_league or '' }}">
-            {% if not selected_league %}
-                <div class="empty-state">
-                    <div class="empty-icon">⚽</div>
-                    <h3>Select a league to view matches</h3>
-                    <p>Click a league above to view live and upcoming matches.</p>
-                </div>
-            {% elif matches %}
-                {% for match in matches %}
-                <article class="match-card">
-                    <div class="match-status">
-                        <span class="live-badge">{{ match.status }}</span>
-                        <span class="minute">
-                            {% if match.minute %}
-                                {{ match.minute }}'
-                            {% else %}
-                                Upcoming
-                            {% endif %}
-                        </span>
-                    </div>
-
-                    <div class="teams">
-                        <div class="team-row">
-                            <span class="team-name">{{ match.home_team }}</span>
-                            <span class="team-score">{{ match.home_score or 0 }}</span>
-                        </div>
-                        <div class="team-row">
-                            <span class="team-name">{{ match.away_team }}</span>
-                            <span class="team-score">{{ match.away_score or 0 }}</span>
-                        </div>
-                    </div>
-
-                    <p class="match-league">{{ match.league }}</p>
-
-                    <div class="card-footer">
-                        <a href="/match/{{ match.id }}" class="details-link">Match details</a>
-                    </div>
-                </article>
-                {% endfor %}
-            {% else %}
-                <div class="empty-state">
-                    <div class="empty-icon">⚠</div>
-                    <h3>No matches found</h3>
-                    <p>Try another league or refresh later.</p>
-                </div>
-            {% endif %}
-        </section>
-    </main>
-
-</div>
-
-<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+                <a
+                  class="details-link"
+                  href="{{ url_for('match_details', match_id=match.id, league=selected_league, date=selected_date) }}"
+                >
+                  Match details
+                </a>
+              </div>
+            </article>
+          {% endfor %}
+        {% else %}
+          <div class="empty-state">
+            <div class="empty-icon">⚠</div>
+            <h3>No matches found</h3>
+            <p>Try another league, another date, or refresh later.</p>
+          </div>
+        {% endif %}
+      </section>
+    </section>
+  </main>
 </body>
 </html>
-

@@ -42,8 +42,6 @@ SUPPORTED_LEAGUES = {
         "season": "2025",
         "source": "api-football",
     },
-
-    # ADDED: FIFA World Cup 2026 from local JSON file
     "world-cup-2026": {
         "id": 1,
         "name": "FIFA World Cup 2026",
@@ -61,18 +59,18 @@ class FootballAPIService:
             "https://v3.football.api-sports.io",
         )
         self.default_season = app_config.get("SEASON", "2025")
-
-        # ADDED: local JSON file for FIFA World Cup 2026
-        # Expected path:
-        # app/data/world-cup-2026.json
-        self.worldcup_json_path = Path(__file__).resolve().parents[1] / "data" / "world-cup-2026.json"
+        self.worldcup_json_path = (
+            Path(__file__).resolve().parents[1]
+            / "data"
+            / "world-cup-2026.json"
+        )
 
     def get_supported_leagues(self):
         return SUPPORTED_LEAGUES
 
     def _get_headers(self):
         return {
-            "x-apisports-key": self.api_key
+            "x-apisports-key": self.api_key,
         }
 
     def _get(self, endpoint, params=None):
@@ -114,6 +112,18 @@ class FootballAPIService:
             "status": item["fixture"]["status"]["short"],
             "minute": item["fixture"]["status"]["elapsed"] or 0,
             "date": item["fixture"]["date"],
+            "stadium": item["fixture"]["venue"]["name"]
+            if item["fixture"].get("venue")
+            else "",
+            "city": item["fixture"]["venue"]["city"]
+            if item["fixture"].get("venue")
+            else "",
+            "stage": item["league"].get("round", ""),
+            "events": [],
+            "lineups": {
+                "home": [],
+                "away": [],
+            },
         }
 
     def _format_worldcup_match(self, item):
@@ -142,7 +152,7 @@ class FootballAPIService:
             ),
         }
 
-    def _load_worldcup_json(self, limit=None):
+    def _load_worldcup_json(self):
         if not self.worldcup_json_path.exists():
             print(f"WORLD CUP JSON NOT FOUND: {self.worldcup_json_path}")
             return []
@@ -158,15 +168,10 @@ class FootballAPIService:
                 for match in matches
             ]
 
-            formatted_matches = sorted(
+            return sorted(
                 formatted_matches,
                 key=lambda match: match.get("date", ""),
             )
-
-            if limit:
-                return formatted_matches[:limit]
-
-            return formatted_matches
 
         except json.JSONDecodeError as error:
             print("WORLD CUP JSON ERROR: invalid JSON format")
@@ -180,7 +185,12 @@ class FootballAPIService:
 
     def _get_league_ids(self, league_key):
         if league_key and league_key in SUPPORTED_LEAGUES:
-            return [SUPPORTED_LEAGUES[league_key]["id"]]
+            league = SUPPORTED_LEAGUES[league_key]
+
+            if league.get("source") == "local-json":
+                return []
+
+            return [league["id"]]
 
         return [
             league["id"]
@@ -197,12 +207,61 @@ class FootballAPIService:
 
         return self.default_season
 
-    def get_live_matches(self, league_key=None):
-        # ADDED: World Cup 2026 is loaded from local JSON
+    def get_available_dates(self, league_key=None):
         if league_key == "world-cup-2026":
             matches = self._load_worldcup_json()
 
-            live_statuses = ["1H", "HT", "2H", "ET", "BT", "P", "SUSP", "INT", "LIVE"]
+            dates = sorted(
+                {
+                    match.get("date", "")[:10]
+                    for match in matches
+                    if match.get("date")
+                }
+            )
+
+            return dates
+
+        today = date.today()
+
+        return [
+            (today + timedelta(days=day_offset)).isoformat()
+            for day_offset in range(0, 14)
+        ]
+
+    def get_default_date(self, available_dates):
+        today = date.today().isoformat()
+
+        if today in available_dates:
+            return today
+
+        future_dates = [
+            available_date
+            for available_date in available_dates
+            if available_date >= today
+        ]
+
+        if future_dates:
+            return future_dates[0]
+
+        if available_dates:
+            return available_dates[-1]
+
+        return today
+
+    def get_live_matches(self, league_key=None):
+        if league_key == "world-cup-2026":
+            matches = self._load_worldcup_json()
+            live_statuses = [
+                "1H",
+                "HT",
+                "2H",
+                "ET",
+                "BT",
+                "P",
+                "SUSP",
+                "INT",
+                "LIVE",
+            ]
 
             return [
                 match
@@ -222,31 +281,68 @@ class FootballAPIService:
                 },
             )
 
-            matches.extend([
-                self._format_fixture(item)
-                for item in data.get("response", [])
-            ])
+            matches.extend(
+                [
+                    self._format_fixture(item)
+                    for item in data.get("response", [])
+                ]
+            )
+
+        return matches
+
+    def get_matches_by_date(self, league_key=None, selected_date=None):
+        if not selected_date:
+            selected_date = date.today().isoformat()
+
+        if league_key == "world-cup-2026":
+            matches = self._load_worldcup_json()
+
+            return [
+                match
+                for match in matches
+                if match.get("date", "").startswith(selected_date)
+            ]
+
+        league_ids = self._get_league_ids(league_key)
+        season = self._get_league_season(league_key)
+        matches = []
+
+        for league_id in league_ids:
+            data = self._get(
+                "fixtures",
+                {
+                    "league": league_id,
+                    "season": season,
+                    "date": selected_date,
+                },
+            )
+
+            matches.extend(
+                [
+                    self._format_fixture(item)
+                    for item in data.get("response", [])
+                ]
+            )
 
         return matches
 
     def get_upcoming_matches(self, league_key=None, limit=10):
-        # ADDED: World Cup 2026 is loaded from local JSON
         if league_key == "world-cup-2026":
             matches = self._load_worldcup_json()
-
+            today = date.today().isoformat()
             upcoming_statuses = ["NS", "TBD", "PST"]
 
             upcoming_matches = [
                 match
                 for match in matches
                 if match.get("status") in upcoming_statuses
+                and match.get("date", "")[:10] >= today
             ]
 
             return upcoming_matches[:limit]
 
         league_ids = self._get_league_ids(league_key)
         matches = []
-
         today = date.today()
         season = self._get_league_season(league_key)
 
@@ -263,10 +359,12 @@ class FootballAPIService:
                     },
                 )
 
-                matches.extend([
-                    self._format_fixture(item)
-                    for item in data.get("response", [])
-                ])
+                matches.extend(
+                    [
+                        self._format_fixture(item)
+                        for item in data.get("response", [])
+                    ]
+                )
 
                 if len(matches) >= limit:
                     return matches[:limit]
@@ -274,7 +372,6 @@ class FootballAPIService:
         return matches[:limit]
 
     def get_match_details(self, match_id):
-        # ADDED: World Cup match details from local JSON
         worldcup_matches = self._load_worldcup_json()
 
         for match in worldcup_matches:
@@ -305,12 +402,14 @@ class FootballAPIService:
         events = []
 
         for event in events_data:
-            events.append({
-                "minute": event.get("time", {}).get("elapsed", 0),
-                "team": event.get("team", {}).get("name", ""),
-                "type": event.get("type", ""),
-                "player": event.get("player", {}).get("name", ""),
-            })
+            events.append(
+                {
+                    "minute": event.get("time", {}).get("elapsed", 0),
+                    "team": event.get("team", {}).get("name", ""),
+                    "type": event.get("type", ""),
+                    "player": event.get("player", {}).get("name", ""),
+                }
+            )
 
         home_lineup = []
         away_lineup = []
@@ -326,14 +425,11 @@ class FootballAPIService:
 
             if team_name == home_name:
                 home_lineup = players
-
             elif team_name == away_name:
                 away_lineup = players
 
         match = self._format_fixture(item)
-
         match["events"] = events
-
         match["lineups"] = {
             "home": home_lineup,
             "away": away_lineup,
